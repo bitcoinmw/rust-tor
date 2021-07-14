@@ -1,0 +1,12 @@
+[package]
+name = "rust_tor_tcp"
+version = "0.0.1"
+authors = ["BMW Developers"]
+description = "rust-tor Config"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/rust-tor"
+keywords = [ "crypto", "tor", "mimblewimble" ]
+exclude = ["**/*.tor", "**/*.tor"]
+edition = "2018"
+
+[dependencies]

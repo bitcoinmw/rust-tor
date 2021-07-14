@@ -1,0 +1,14 @@
+[package]
+name = "rust_tor_error"
+version = "0.0.1"
+authors = ["BMW Developers"]
+description = "rust-tor Errors"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/rust-tor"
+keywords = [ "crypto", "tor", "mimblewimble" ]
+exclude = ["**/*.tor"]
+edition = "2018"
+
+[dependencies]
+failure = "0.1"
+failure_derive = "0.1"

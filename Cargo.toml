@@ -1,0 +1,32 @@
+[package]
+name = "rust-tor"
+version = "0.0.1"
+authors = ["BitcoinMW Developers <bitcoinmw@protonmail.com>"]
+description = "A tor library for use with BitcoinMW"
+license = "Apache-2.0"
+repository = "https://github.com/bitcoinmw/rust-tor"
+keywords = [ "crypto", "bitcoinmw", "tor" ]
+readme = "README.md"
+exclude = ["**/*.tor", "**/*.tor"]
+build = "src/build/build.rs"
+edition = "2018"
+
+[workspace]
+members = ["tcp", "controller", "error", "util", "config"]
+
+[[bin]]
+name = "rust-tor"
+path = "src/bin/rust-tor.rs"
+
+[dependencies]
+clap = { version = "2.33", features = ["yaml"] }
+
+rust_tor_error = { path = "./error", version = "0.0.1" }
+rust_tor_util = { path = "./util", version = "0.0.1" }
+rust_tor_config = { path = "./config", version = "0.0.1" }
+rust_tor_tcp = { path = "./tcp", version = "0.0.1" }
+rust_tor_controller = { path = "./controller", version = "0.0.1" }
+
+[build-dependencies]
+built = { version = "0.4", features = ["git2"]}
+
