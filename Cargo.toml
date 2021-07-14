@@ -15,7 +15,7 @@ edition = "2018"
 members = ["tcp", "controller", "error", "util", "config"]
 
 [[bin]]
-name = "rust-tor"
+name = "tor"
 path = "src/bin/rust-tor.rs"
 
 [dependencies]
