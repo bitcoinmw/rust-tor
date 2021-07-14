@@ -10,5 +10,10 @@ exclude = ["**/*.tor"]
 edition = "2018"
 
 [dependencies]
-failure = "0.1"
-failure_derive = "0.1"
+
+rust_tor_error = { path = "../error", version = "0.0.1" }
+
+hyper = "0.13"
+hyper-rustls = "0.20"
+hyper-timeout = "0.3"
+futures = "0.3"

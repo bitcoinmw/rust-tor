@@ -17,68 +17,87 @@ use std::fmt::{self, Display};
 
 #[derive(Debug, Fail)]
 pub struct Error {
-    inner: Context<ErrorKind>,
+	inner: Context<ErrorKind>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Fail)]
 /// ErrorKinds for BMW Node
 pub enum ErrorKind {
-    /// Config Error
-    #[fail(display = "Config Error: {}", _0)]
-    ConfigError(String),
-    /// P2P Error
-    #[fail(display = "P2P Error: {}", _0)]
-    P2P(String),
-    /// IO Error
-    #[fail(display = "IOError: {}", _0)]
-    IOError(String),
+	/// Config Error
+	#[fail(display = "Config Error: {}", _0)]
+	ConfigError(String),
+	/// P2P Error
+	#[fail(display = "Request Error: {}", _0)]
+	RequestError(String),
+	/// IO Error
+	#[fail(display = "IOError: {}", _0)]
+	IOError(String),
+	/// Hyper Error
+	#[fail(display = "Hyper: {}", _0)]
+	Hyper(String),
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let cause = match self.cause() {
-            Some(c) => format!("{}", c),
-            None => String::from("Unknown"),
-        };
-        let backtrace = match self.backtrace() {
-            Some(b) => format!("{}", b),
-            None => String::from("Unknown"),
-        };
-        let output = format!(
-            "{} \n Cause: {} \n Backtrace: {}",
-            self.inner, cause, backtrace
-        );
-        Display::fmt(&output, f)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let cause = match self.cause() {
+			Some(c) => format!("{}", c),
+			None => String::from("Unknown"),
+		};
+		let backtrace = match self.backtrace() {
+			Some(b) => format!("{}", b),
+			None => String::from("Unknown"),
+		};
+		let output = format!(
+			"{} \n Cause: {} \n Backtrace: {}",
+			self.inner, cause, backtrace
+		);
+		Display::fmt(&output, f)
+	}
 }
 
 impl Error {
-    /// get kind
-    pub fn kind(&self) -> ErrorKind {
-        self.inner.get_context().clone()
-    }
-    /// get cause
-    pub fn cause(&self) -> Option<&dyn Fail> {
-        self.inner.cause()
-    }
-    /// get backtrace
-    pub fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
-    }
+	/// get kind
+	pub fn kind(&self) -> ErrorKind {
+		self.inner.get_context().clone()
+	}
+	/// get cause
+	pub fn cause(&self) -> Option<&dyn Fail> {
+		self.inner.cause()
+	}
+	/// get backtrace
+	pub fn backtrace(&self) -> Option<&Backtrace> {
+		self.inner.backtrace()
+	}
 }
 
 impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Error {
-        Error {
-            inner: Context::new(kind),
-        }
-    }
+	fn from(kind: ErrorKind) -> Error {
+		Error {
+			inner: Context::new(kind),
+		}
+	}
 }
 
 impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Error {
-        Error {
-            inner: Context::new(ErrorKind::IOError(format!("{}", e))),
-        }
-    }
+	fn from(e: std::io::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::IOError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<hyper::http::Error> for Error {
+	fn from(e: hyper::http::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::Hyper(format!("{}", e))),
+		}
+	}
+}
+
+impl From<hyper::Error> for Error {
+	fn from(e: hyper::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::Hyper(format!("{}", e))),
+		}
+	}
 }
