@@ -35,6 +35,9 @@ pub enum ErrorKind {
 	/// Hyper Error
 	#[fail(display = "Hyper: {}", _0)]
 	Hyper(String),
+	/// Poison Error
+	#[fail(display = "Poison: {}", _0)]
+	PoisonError(String),
 }
 
 impl Display for Error {

@@ -18,7 +18,25 @@ use hyper::http::request::Builder;
 use hyper::{body, Body, Client, Request};
 use hyper_rustls::HttpsConnector;
 use hyper_timeout::TimeoutConnector;
+use lazy_static::lazy_static;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
+use tokio::runtime::{Builder as TokioBuilder, Runtime};
+
+// Global Tokio runtime.
+// Needs a `Mutex` because `Runtime::block_on` requires mutable access.
+// Tokio v0.3 requires immutable self, but we are waiting on upstream
+// updates before we can upgrade.
+// See: https://github.com/seanmonstar/reqwest/pull/1076
+lazy_static! {
+	pub static ref RUNTIME: Arc<Mutex<Runtime>> = Arc::new(Mutex::new(
+		TokioBuilder::new()
+			.threaded_scheduler()
+			.enable_all()
+			.build()
+			.unwrap()
+	));
+}
 
 pub struct UrlContext {
 	client: Client<TimeoutConnector<HttpsConnector<HttpConnector>>>,
@@ -44,7 +62,7 @@ pub fn build_connector_context(
 	UrlContext { client, builder }
 }
 
-pub async fn do_get(url: &str, context: UrlContext) -> Result<String, Error> {
+pub async fn async_do_get(url: &str, context: UrlContext) -> Result<String, Error> {
 	let req = context
 		.builder
 		.method("get")
@@ -61,4 +79,8 @@ pub async fn do_get(url: &str, context: UrlContext) -> Result<String, Error> {
 		.map_err(|e| ErrorKind::RequestError(format!("Cannot read response body: {}", e)))?;
 
 	Ok(String::from_utf8_lossy(&raw).to_string())
+}
+
+pub fn do_get(url: &str, context: UrlContext) -> Result<String, Error> {
+	RUNTIME.lock().unwrap().block_on(async_do_get(url, context))
 }
