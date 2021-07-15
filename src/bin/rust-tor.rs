@@ -50,11 +50,16 @@ fn main_with_result() -> Result<(), Error> {
 		"header_url_ABC_DEF",
 	)?;
 
+	let mut count = 0;
 	loop {
 		println!("logging");
 		log.log("test1")?;
 		log.log("test2")?;
 		std::thread::sleep(std::time::Duration::from_secs(5));
+		count += 1;
+		if count >= 1_000_000 {
+			break;
+		}
 	}
 
 	Ok(())
