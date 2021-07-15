@@ -16,6 +16,7 @@ use tor_config::config::get_config;
 use tor_util as util;
 use util::Error;
 //use util::http::{build_connector_context, do_get};
+use tor_tcp::ds_load::build_ds_context;
 use util::logger::Log;
 
 fn main() {
@@ -35,6 +36,8 @@ fn real_main() -> i32 {
 
 fn main_with_result() -> Result<(), Error> {
 	let config = get_config()?;
+	let ds_context = build_ds_context(&config)?;
+
 	println!("config={:?}", config);
 	println!("config.version = {}", config.version);
 	/*

@@ -16,7 +16,7 @@ use tor_config::config::TorConfig;
 use tor_util::store::lmdb::Store;
 use tor_util::Error;
 
-const DB_NAME: &str = "db";
+const DB_NAME: &str = "ds_db";
 
 pub struct DSContext {
 	store: Store,
@@ -25,7 +25,7 @@ pub struct DSContext {
 pub struct DSInfo {}
 
 pub fn build_ds_context(config: &TorConfig) -> Result<DSContext, Error> {
-	let store = Store::new(&config.db_root, None, Some(DB_NAME), None)?;
+	let store = Store::new(&config.db_root, None, Some(DB_NAME), None, true)?;
 
 	Ok(DSContext { store })
 }
