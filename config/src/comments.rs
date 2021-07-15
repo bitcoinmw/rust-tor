@@ -27,6 +27,8 @@ const DEFAULT_TOML: &str = "\
 \n\
 version = \"REPLACE_VERSION\"\n\
 \n\
+db_root = \"REPLACE_DB_ROOT\"\n\
+\n\
 directory_servers = [\n\
 \t\"45.66.33.45\",\n\
 \t\"66.111.2.131\",\n\
@@ -50,7 +52,9 @@ pub fn build_toml(config: &TorConfig) -> Result<(), Error> {
 	// make sure we can create the file.
 	match file {
 		Ok(mut file) => {
-			let toml = DEFAULT_TOML.replace("REPLACE_VERSION", &config.version);
+			let toml = DEFAULT_TOML
+				.replace("REPLACE_VERSION", &config.version)
+				.replace("REPLACE_DB_ROOT", &config.db_root);
 			// write file
 			file.write_all(toml.as_bytes())?;
 

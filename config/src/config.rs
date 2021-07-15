@@ -37,6 +37,8 @@ pub struct TorConfig {
 	pub version: String,
 	/// Directory Servers
 	pub directory_servers: Vec<String>,
+	/// DB Root
+	pub db_root: String,
 }
 
 // include build information
@@ -103,11 +105,21 @@ pub fn get_config() -> Result<TorConfig, Error> {
 
 	let directory_servers = vec![];
 
+	let db_root = {
+		let mut buf = PathBuf::from(&config_file);
+		buf.pop();
+		buf.push("tor_data");
+		let buf_str = buf.into_os_string().into_string().unwrap();
+		fsutils::mkdir(&buf_str);
+		buf_str
+	};
+
 	// build preliminary tor config
 	let mut config = TorConfig {
 		config_file,
 		version,
 		directory_servers,
+		db_root,
 	};
 
 	// try to get it, if not there, create it

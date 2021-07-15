@@ -45,6 +45,9 @@ pub enum ErrorKind {
 	/// Invalid TOML File
 	#[fail(display = "TOML Error: {}", _0)]
 	TomlError(String),
+	/// Store Error
+	#[fail(display = "Store Error: {}", _0)]
+	StoreError(String),
 }
 
 impl Display for Error {
@@ -124,6 +127,14 @@ impl From<toml::de::Error> for Error {
 	fn from(e: toml::de::Error) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::TomlError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<grin_store::Error> for Error {
+	fn from(e: grin_store::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::StoreError(format!("{}", e))),
 		}
 	}
 }

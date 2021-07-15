@@ -12,6 +12,7 @@ edition = "2018"
 [dependencies]
 
 tor_error = { path = "../error", version = "0.0.1" }
+grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
 
 tokio = { version = "0.2", features = ["full"] }
 lazy_static = "1.4"
