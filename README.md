@@ -5,7 +5,7 @@
 
 # rust-tor
 
-This is a embeddable TOR library written in rust that is meant for use with BitcoinMW. It may be used for other purposes as well.
+This is an embeddable TOR library written in rust that is meant for use with BitcoinMW. It may be used for other purposes as well.
 
 # Status
 
