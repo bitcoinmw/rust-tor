@@ -13,7 +13,9 @@
 // limitations under the License.
 
 use rust_tor_error::Error;
-use rust_tor_util::http::{build_connector_context, do_get};
+use rust_tor_util as util;
+use util::http::{build_connector_context, do_get};
+use util::logger::Log;
 
 fn main() {
 	let exit_code = real_main();
@@ -38,6 +40,22 @@ fn main_with_result() -> Result<(), Error> {
 	)?;
 
 	println!("response={}", response);
+
+	let mut log = Log::new(
+		"./test.log",
+		true,
+		100,
+		1000 * 60,
+		true,
+		"header_url_ABC_DEF",
+	)?;
+
+	loop {
+		println!("logging");
+		log.log("test1")?;
+		log.log("test2")?;
+		std::thread::sleep(std::time::Duration::from_secs(5));
+	}
 
 	Ok(())
 }

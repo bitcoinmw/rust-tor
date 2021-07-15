@@ -15,3 +15,4 @@
 pub use rust_tor_error::{Error, ErrorKind};
 
 pub mod http;
+pub mod logger;

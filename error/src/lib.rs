@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use failure::{Backtrace, Context, Fail};
+use std::ffi::OsString;
 use std::fmt::{self, Display};
 
 #[derive(Debug, Fail)]
@@ -36,8 +37,8 @@ pub enum ErrorKind {
 	#[fail(display = "Hyper: {}", _0)]
 	Hyper(String),
 	/// Poison Error
-	#[fail(display = "Poison: {}", _0)]
-	PoisonError(String),
+	#[fail(display = "OsString: {}", _0)]
+	OsString(String),
 }
 
 impl Display for Error {
@@ -101,6 +102,14 @@ impl From<hyper::Error> for Error {
 	fn from(e: hyper::Error) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::Hyper(format!("{}", e))),
+		}
+	}
+}
+
+impl From<OsString> for Error {
+	fn from(e: OsString) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::OsString(format!("{:?}", e))),
 		}
 	}
 }
