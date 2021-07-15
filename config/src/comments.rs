@@ -17,45 +17,27 @@ use crate::{Error, ErrorKind};
 use std::fs::File;
 use std::io::Write;
 
-/// This is hte default TOML file. It's modified based on user input.
+/// This is the default TOML file. It's modified based passed in params.
 const DEFAULT_TOML: &str = "\
 \n\
-#########################################\n\
-### WALLET CONFIGURATION              ###\n\
-#########################################\n\
-[wallet]\n\
+##############################################################################\n\
+### TOR CONFIGURATION                                                      ###\n\
+##############################################################################\n\
+[general]\n\
 \n\
-chain_type = \"REPLACE_NETWORK\"\n\
-\n\
-# Full Node\n\
-node = \"REPLACE_NODE\"\n\
-\n\
-#location of the node api secret for basic auth on the BMW node API\n\
-node_api_secret_path = \"REPLACE_ROOT_DIR/.foreign_api_secret\"\n\
+version = \"REPLACE_VERSION\"\n\
 \n\
 ";
 
 /// This function builds the toml file based on the TorConfig argument
 /// The toml file is saved in the specified location
-pub fn build_toml(toml_location: String, config: &TorConfig) -> Result<(), Error> {
+pub fn build_toml(config: &TorConfig) -> Result<(), Error> {
+	let toml_location = &config.config_file;
 	let file = File::create(toml_location.clone());
 	// make sure we can create the file.
 	match file {
 		Ok(mut file) => {
-			let toml = DEFAULT_TOML;
-			/*
-						// replace all parameters
-						let toml = DEFAULT_TOML
-							.replace("REPLACE_NETWORK", &config.chain_type.longname())
-							.replace(
-								"REPLACE_NODE",
-								match &config.chain_type {
-									ChainTypes::Mainnet => "http://127.0.0.1:3413",
-									_ => "http://127.0.0.1:13413",
-								},
-							)
-							.replace("REPLACE_ROOT_DIR", &get_top_level_dir_name(&config)?);
-			*/
+			let toml = DEFAULT_TOML.replace("REPLACE_VERSION", &config.version);
 			// write file
 			file.write_all(toml.as_bytes())?;
 

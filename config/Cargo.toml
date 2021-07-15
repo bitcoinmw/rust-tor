@@ -16,7 +16,7 @@ failure_derive = "0.1"
 dirs = "2.0"
 clap = { version = "2.33", features = ["yaml"] }
 toml = "0.5.8"
-log = "0.4"
+fsutils = "0.1.0"
 
 tor_util = { path = "../util", version = "0.0.1" }
 tor_error = { path = "../error", version = "0.0.1" }

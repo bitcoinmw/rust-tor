@@ -17,19 +17,24 @@ use crate::{Error, ErrorKind};
 use clap::load_yaml;
 use clap::App;
 use std::fs;
+use std::fs::{canonicalize, metadata};
 use std::path::Path;
 use std::path::PathBuf;
 use toml::Value;
 use toml::Value::Table;
-const TOR_HOME: &str = ".tor";
 
+/// the default Tor directory (we use .tor2 not to collide with .tor)
+const TOR_HOME: &str = ".tor2";
+/// The default name for the Tor toml config file
 const TOML_NAME: &str = "tor.toml";
 
+/// This is the main configuration file for tor
+#[derive(Debug)]
 pub struct TorConfig {
-	/// Current dir optional parameter
-	pub current_dir: Option<PathBuf>,
-	/// Whether to create the directory if it doesn't exist
-	pub create_path: bool,
+	/// Location of the config file
+	pub config_file: String,
+	/// Version of the configuration file
+	pub version: String,
 }
 
 // include build information
@@ -38,35 +43,13 @@ pub mod built_info {
 }
 
 // create the default toml file if it doesn't already exist
-// if it exists, return the toml Value.
-pub fn try_create_toml(config: &TorConfig, create_path: bool) -> Result<String, Error> {
-	let current_dir = &config.current_dir;
-
-	// check if current directory has a toml
-	let toml_location = if current_dir.is_some() {
-		let current_dir = current_dir.as_ref().unwrap();
-		let mut path_buf = PathBuf::new();
-		path_buf.push(current_dir);
-		path_buf.push(TOML_NAME);
-		path_buf
-	} else {
-		// use default path
-		let mut path_buf = PathBuf::new();
-		get_tor_path(config.create_path, &mut path_buf)?;
-		path_buf.push(TOML_NAME);
-		path_buf
-	}
-	.into_os_string()
-	.into_string()
-	.unwrap();
-
+// return the toml Value.
+pub fn try_create_toml(config: &TorConfig) -> Result<String, Error> {
 	// create if specified
-	if !Path::new(&toml_location).exists() && create_path {
-		build_toml(toml_location.clone(), config)?;
+	if !Path::new(&config.config_file).exists() || metadata(&config.config_file)?.len() == 0 {
+		build_toml(config)?;
 	}
-
-	let contents = fs::read_to_string(toml_location)?;
-
+	let contents = fs::read_to_string(&config.config_file)?;
 	Ok(contents)
 }
 
@@ -75,19 +58,60 @@ pub fn get_config() -> Result<TorConfig, Error> {
 	// config is based on tor.yml
 	let yml = load_yaml!("tor.yml");
 	let version = built_info::PKG_VERSION.to_string();
-
 	let args = App::from_yaml(yml)
 		.version(built_info::PKG_VERSION)
 		.get_matches();
 
-	let config = TorConfig {
-		current_dir: None,
-		create_path: true,
+	let config_file = if args.is_present("config") {
+		// if config specified use value passed in
+		let file_name = args.value_of("config").unwrap().to_string();
+		// we have to create it to use canonicalize
+		if !fsutils::path_exists(&file_name) {
+			fsutils::create_file(&file_name);
+		}
+		// return canonicalized path
+		canonicalize(PathBuf::from(file_name))?
+			.into_os_string()
+			.into_string()
+			.unwrap()
+	} else {
+		// use default, not specified
+		let mut config_path = PathBuf::new();
+		match dirs::home_dir() {
+			Some(p) => {
+				let home_dir_str = p.into_os_string().into_string().unwrap();
+				config_path.push(home_dir_str);
+				config_path.push(TOR_HOME);
+			}
+			_ => {
+				config_path.push(TOR_HOME);
+			}
+		}
+		// mkdir for default if it doesn't exist
+		fsutils::mkdir(&config_path.clone().into_os_string().into_string().unwrap());
+		config_path.push(TOML_NAME);
+		let path = &config_path.clone().into_os_string().into_string().unwrap();
+		// create the file if it's not there
+		if !fsutils::path_exists(path) {
+			fsutils::create_file(path);
+		}
+		let config_path = canonicalize(config_path)?;
+		config_path.into_os_string().into_string().unwrap()
 	};
+	// build preliminary tor config
+	let mut config = TorConfig {
+		config_file,
+		version,
+	};
+
+	// try to get it, if not there, create it
+	let toml_text = try_create_toml(&config)?;
+	// update config based on toml file values
+	update_config(&mut config, toml_text)?;
 	Ok(config)
 }
 
-/// Update the config object based on the passed in value
+/// Update the config object based on the passed in values from config file
 fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 	let value = match value.parse::<Value>()? {
 		Table(value) => value,
@@ -96,31 +120,33 @@ fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 		}
 	};
 
-	Ok(())
-}
-
-/// Get the tor path
-pub fn get_tor_path(create_path: bool, tor_path: &mut PathBuf) -> Result<(), Error> {
-	// Check if bmw dir exists
-
-	match dirs::home_dir() {
-		Some(p) => {
-			let home_dir_str = p.into_os_string().into_string().unwrap();
-			tor_path.push(home_dir_str);
-			tor_path.push(TOR_HOME);
+	// make sure there's a general section
+	let general = value.get("general");
+	let general = match general {
+		Some(general) => general,
+		None => {
+			return Err(
+				ErrorKind::TomlError("general section must be specified".to_string()).into(),
+			)
 		}
+	};
 
-		_ => {}
-	}
+	// get the version
+	config.version = match general.get("version") {
+		Some(version) => match version.as_str() {
+			Some(version) => version.to_string(),
+			None => {
+				return Err(
+					ErrorKind::TomlError("general.version must be a string".to_string()).into(),
+				)
+			}
+		},
+		None => {
+			return Err(
+				ErrorKind::TomlError("general.version must be specified".to_string()).into(),
+			)
+		}
+	};
 
-	// Create if the default path doesn't exist
-	if !tor_path.exists() && create_path {
-		fs::create_dir_all(tor_path.clone())?;
-	}
-
-	if !tor_path.exists() {
-		Err(ErrorKind::PathNotFoundError(String::from(tor_path.to_str().unwrap())).into())
-	} else {
-		Ok(())
-	}
+	Ok(())
 }

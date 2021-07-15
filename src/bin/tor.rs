@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use tor_config::config::get_config;
 use tor_error::Error;
 use tor_util as util;
-use util::http::{build_connector_context, do_get};
+//use util::http::{build_connector_context, do_get};
 use util::logger::Log;
 
 fn main() {
@@ -26,20 +27,25 @@ fn real_main() -> i32 {
 	match main_with_result() {
 		Ok(_) => 0,
 		Err(e) => {
-			println!("Error: {}", e);
+			println!("Startup Error: {}", e);
 			-1
 		}
 	}
 }
 
 fn main_with_result() -> Result<(), Error> {
-	let context = build_connector_context(20, 20, 20);
-	let response = do_get(
-		"http://86.59.21.38/tor/status-vote/current/consensus/",
-		context,
-	)?;
+	let config = get_config()?;
+	println!("config={:?}", config);
+	println!("config.version = {}", config.version);
+	/*
+		let context = build_connector_context(20, 20, 20);
+		let response = do_get(
+			"http://86.59.21.38/tor/status-vote/current/consensus/",
+			context,
+		)?;
 
-	println!("response={}", response);
+		println!("response={}", response);
+	*/
 
 	let mut log = Log::new(
 		"./test.log",
