@@ -35,6 +35,8 @@ pub struct TorConfig {
 	pub config_file: String,
 	/// Version of the configuration file
 	pub version: String,
+	/// Directory Servers
+	pub directory_servers: Vec<String>,
 }
 
 // include build information
@@ -98,10 +100,14 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		let config_path = canonicalize(config_path)?;
 		config_path.into_os_string().into_string().unwrap()
 	};
+
+	let directory_servers = vec![];
+
 	// build preliminary tor config
 	let mut config = TorConfig {
 		config_file,
 		version,
+		directory_servers,
 	};
 
 	// try to get it, if not there, create it
@@ -145,6 +151,34 @@ fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 			return Err(
 				ErrorKind::TomlError("general.version must be specified".to_string()).into(),
 			)
+		}
+	};
+
+	config.directory_servers = match general.get("directory_servers") {
+		Some(ds) => match ds.as_array() {
+			Some(ds) => {
+				let mut ret = vec![];
+				for s in ds {
+					let value = s.as_str();
+					if value.is_none() {
+						return Err(ErrorKind::TomlError(
+							"general.directory_servers must be an array of strings".to_string(),
+						)
+						.into());
+					}
+					ret.push(value.unwrap().to_string());
+				}
+				ret
+			}
+			None => {
+				return Err(ErrorKind::TomlError(
+					"general.directory_servers must be an array".to_string(),
+				)
+				.into());
+			}
+		},
+		None => {
+			return Err(ErrorKind::TomlError("general.version must be a string".to_string()).into())
 		}
 	};
 

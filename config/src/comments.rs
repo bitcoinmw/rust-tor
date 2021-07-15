@@ -27,6 +27,19 @@ const DEFAULT_TOML: &str = "\
 \n\
 version = \"REPLACE_VERSION\"\n\
 \n\
+directory_servers = [\n\
+\t\"45.66.33.45\",\n\
+\t\"66.111.2.131\",\n\
+\t\"128.31.0.34\",\n\
+\t\"86.59.21.38\",\n\
+\t\"204.13.164.118\",\n\
+\t\"171.25.193.9\",\n\
+\t\"193.23.244.244\",\n\
+\t\"154.35.175.225\",\n\
+\t\"131.188.40.189\",\n\
+\t\"199.58.81.140\",\n\
+]\n\
+\n\
 ";
 
 /// This function builds the toml file based on the TorConfig argument
