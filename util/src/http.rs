@@ -38,11 +38,13 @@ lazy_static! {
 	));
 }
 
+/// reusable context for making HTTP(s) requests
 pub struct UrlContext {
 	client: Client<TimeoutConnector<HttpsConnector<HttpConnector>>>,
 	builder: Builder,
 }
 
+/// build the context. Use timeout values passed in
 pub fn build_connector_context(
 	connect_timeout_secs: u64,
 	read_timeout_secs: u64,
@@ -62,6 +64,7 @@ pub fn build_connector_context(
 	UrlContext { client, builder }
 }
 
+/// asynchronously make the request
 pub async fn async_do_get(url: &str, context: UrlContext) -> Result<String, Error> {
 	let req = context
 		.builder
@@ -81,6 +84,10 @@ pub async fn async_do_get(url: &str, context: UrlContext) -> Result<String, Erro
 	Ok(String::from_utf8_lossy(&raw).to_string())
 }
 
+/// do the get request. this module will block here, but free up execution
+/// to other threads due to the use of await.
+/// Note: only a single HTTP request at a time due to the global Mutex.
+/// This is ok for our uses, but should be fixed if more is needed from this module.
 pub fn do_get(url: &str, context: UrlContext) -> Result<String, Error> {
 	RUNTIME.lock().unwrap().block_on(async_do_get(url, context))
 }

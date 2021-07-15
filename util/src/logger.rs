@@ -20,11 +20,13 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
+/// The main logging object
 pub struct Log {
 	lock: Option<Mutex<LogParams>>,
 	data: Option<LogParams>,
 }
 
+/// The data that is held by the Log object
 pub struct LogParams {
 	file: File,
 	file_path: String,
@@ -37,6 +39,7 @@ pub struct LogParams {
 }
 
 impl LogParams {
+	/// This function rotates logs
 	fn rotate(&mut self) -> Result<(), Error> {
 		let now: DateTime<Utc> = Utc::now();
 		let rotation_string = now.format(".r_%m_%e_%Y_%T").to_string().replace(":", "-");
@@ -58,16 +61,21 @@ impl LogParams {
 		Ok(())
 	}
 
+	/// The actual logging function, handles rotation if needed
 	pub fn log(&mut self, line: &str) -> Result<(), Error> {
-		let line_bytes = line.as_bytes();
-		self.cur_size += line_bytes.len() as u64 + 1;
+		let line_bytes = line.as_bytes(); // get line as bytes
+		self.cur_size += line_bytes.len() as u64 + 1; // increment cur_size
 		if self.show_timestamp {
+			// timestamp is an additional 23 bytes
 			self.cur_size += 23;
 		}
+		// get current time
 		let time_now = SystemTime::now()
 			.duration_since(std::time::UNIX_EPOCH)
 			.expect("Time went backwards")
 			.as_millis();
+
+		// check if rotation is needed
 		if self.cur_size >= self.max_size
 			|| time_now.saturating_sub(self.init_age_millis) > self.max_age_millis
 		{
@@ -78,19 +86,23 @@ impl LogParams {
 			self.init_age_millis = time_now;
 			self.cur_size = self.file_header.len() as u64 + 1;
 		}
+
+		// if we're showing the timestamp, print it
 		if self.show_timestamp {
 			let date = Local::now();
 			let formatted_ts = date.format("%Y-%m-%d %H:%M:%S");
 			self.file
 				.write(format!("[{}]: ", formatted_ts).as_bytes())?;
 		}
+		// finally log the line followed by a newline.
 		self.file.write(line_bytes)?;
-		self.file.write(&[10u8])?; // new line
+		self.file.write(&[10u8])?; // newline
 		Ok(())
 	}
 }
 
 impl Log {
+	/// create a new Log object to use based on specified values
 	pub fn new(
 		file_path: &str,
 		lock: bool,
@@ -99,11 +111,14 @@ impl Log {
 		show_timestamp: bool,
 		file_header: &str,
 	) -> Result<Log, Error> {
+		// create file with append option and create option
 		let mut file = OpenOptions::new()
 			.append(true)
 			.create(true)
 			.open(file_path)?;
+		// get current size of the file
 		let mut cur_size = metadata(file_path)?.len();
+		// age is only relative to start logging time
 		let init_age_millis = SystemTime::now()
 			.duration_since(std::time::UNIX_EPOCH)
 			.expect("Time went backwards")
@@ -113,12 +128,14 @@ impl Log {
 			.into_string()?;
 		let file_header = file_header.to_string();
 		if cur_size == 0 {
+			// add the header if the file is new
 			let line_bytes = file_header.as_bytes();
 			file.write(line_bytes)?;
 			file.write(&[10u8])?; // new line
 			cur_size = file_header.len() as u64 + 1;
 		}
 
+		// return Log object based on whether lock is specified
 		if lock {
 			Ok(Log {
 				lock: Some(Mutex::new(LogParams {
@@ -150,6 +167,7 @@ impl Log {
 		}
 	}
 
+	/// Entry point for logging
 	pub fn log(&mut self, line: &str) -> Result<(), Error> {
 		if self.lock.is_some() {
 			let log_params = &mut *self.lock.as_ref().unwrap().lock().unwrap();
