@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub use crate::error::{Error, ErrorKind};
 pub use grin_store as store;
-pub use tor_error::{Error, ErrorKind};
 
+mod error;
 pub mod http;
 pub mod logger;

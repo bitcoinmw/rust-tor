@@ -12,5 +12,4 @@ edition = "2018"
 [dependencies]
 
 tor_util = { path = "../util", version = "0.0.1" }
-tor_error = { path = "../error", version = "0.0.1" }
 tor_config = { path = "../config", version = "0.0.1" }

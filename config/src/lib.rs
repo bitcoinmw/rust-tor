@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub use tor_error::{Error, ErrorKind};
+pub use tor_util::{Error, ErrorKind};
 
 pub mod comments;
 pub mod config;

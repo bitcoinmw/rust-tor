@@ -11,7 +11,6 @@ edition = "2018"
 
 [dependencies]
 
-tor_error = { path = "../error", version = "0.0.1" }
 grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", tag = "v0.0.1"}
 
 tokio = { version = "0.2", features = ["full"] }
@@ -22,3 +21,6 @@ hyper-timeout = "0.3"
 futures = "0.3"
 chrono = "0.4"
 rand = "0.8.4"
+failure = "0.1"
+failure_derive = "0.1"
+toml = "0.5.8"

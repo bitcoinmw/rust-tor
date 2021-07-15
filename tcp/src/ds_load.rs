@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use tor_config::config::TorConfig;
-use tor_error::Error;
 use tor_util::store::lmdb::Store;
+use tor_util::Error;
 
 const DB_NAME: &str = "db";
 

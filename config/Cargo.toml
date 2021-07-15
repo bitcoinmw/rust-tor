@@ -19,7 +19,6 @@ toml = "0.5.8"
 fsutils = "0.1.0"
 
 tor_util = { path = "../util", version = "0.0.1" }
-tor_error = { path = "../error", version = "0.0.1" }
 
 [build-dependencies]
 built = { version = "0.4", features = ["git2"]}

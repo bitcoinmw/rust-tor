@@ -13,8 +13,8 @@
 // limitations under the License.
 
 use tor_config::config::get_config;
-use tor_error::Error;
 use tor_util as util;
+use util::Error;
 //use util::http::{build_connector_context, do_get};
 use util::logger::Log;
 
