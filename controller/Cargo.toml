@@ -1,8 +1,8 @@
 [package]
-name = "rust_tor_controller"
+name = "tor_controller"
 version = "0.0.1"
 authors = ["BMW Developers"]
-description = "rust-tor Errors"
+description = "rust-tor controller"
 license = "Apache-2.0"
 repository = "https://github.com/bitcoinmw/rust-tor"
 keywords = [ "crypto", "tor", "mimblewimble" ]

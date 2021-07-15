@@ -1,5 +1,5 @@
 [package]
-name = "rust_tor_error"
+name = "tor_error"
 version = "0.0.1"
 authors = ["BMW Developers"]
 description = "rust-tor Errors"
@@ -13,3 +13,4 @@ edition = "2018"
 failure = "0.1"
 failure_derive = "0.1"
 hyper = "0.13"
+toml = "0.5.8"

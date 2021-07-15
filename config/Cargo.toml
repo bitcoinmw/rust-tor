@@ -1,14 +1,25 @@
 [package]
-name = "rust_tor_config"
+name = "tor_config"
 version = "0.0.1"
 authors = ["BMW Developers"]
-description = "rust-tor Errors"
+description = "Rust TOR config"
 license = "Apache-2.0"
 repository = "https://github.com/bitcoinmw/rust-tor"
 keywords = [ "crypto", "tor", "mimblewimble" ]
-exclude = ["**/*.tor"]
+exclude = ["**/*.tor", "**/*.tor2"]
+build = "src/build.rs"
 edition = "2018"
 
 [dependencies]
 failure = "0.1"
 failure_derive = "0.1"
+dirs = "2.0"
+clap = { version = "2.33", features = ["yaml"] }
+toml = "0.5.8"
+log = "0.4"
+
+tor_util = { path = "../util", version = "0.0.1" }
+tor_error = { path = "../error", version = "0.0.1" }
+
+[build-dependencies]
+built = { version = "0.4", features = ["git2"]}

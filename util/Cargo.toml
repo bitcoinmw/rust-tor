@@ -1,8 +1,8 @@
 [package]
-name = "rust_tor_util"
+name = "tor_util"
 version = "0.0.1"
 authors = ["BMW Developers"]
-description = "rust-tor Errors"
+description = "Tor Utilities"
 license = "Apache-2.0"
 repository = "https://github.com/bitcoinmw/rust-tor"
 keywords = [ "crypto", "tor", "mimblewimble" ]
@@ -11,7 +11,7 @@ edition = "2018"
 
 [dependencies]
 
-rust_tor_error = { path = "../error", version = "0.0.1" }
+tor_error = { path = "../error", version = "0.0.1" }
 
 tokio = { version = "0.2", features = ["full"] }
 lazy_static = "1.4"

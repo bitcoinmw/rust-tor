@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use rust_tor_error::Error;
-use rust_tor_util as util;
+use tor_error::Error;
+use tor_util as util;
 use util::http::{build_connector_context, do_get};
 use util::logger::Log;
 

@@ -22,7 +22,7 @@ pub struct Error {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Fail)]
-/// ErrorKinds for BMW Node
+/// ErrorKinds for Tor
 pub enum ErrorKind {
 	/// Config Error
 	#[fail(display = "Config Error: {}", _0)]
@@ -31,14 +31,20 @@ pub enum ErrorKind {
 	#[fail(display = "Request Error: {}", _0)]
 	RequestError(String),
 	/// IO Error
-	#[fail(display = "IOError: {}", _0)]
+	#[fail(display = "IO Error: {}", _0)]
 	IOError(String),
 	/// Hyper Error
-	#[fail(display = "Hyper: {}", _0)]
+	#[fail(display = "Hyper Error: {}", _0)]
 	Hyper(String),
 	/// Poison Error
-	#[fail(display = "OsString: {}", _0)]
+	#[fail(display = "OsString Error: {}", _0)]
 	OsString(String),
+	/// Path not found
+	#[fail(display = "Path not found Error: {}", _0)]
+	PathNotFoundError(String),
+	/// Invalid TOML File
+	#[fail(display = "TOML Error: {}", _0)]
+	TomlError(String),
 }
 
 impl Display for Error {
@@ -110,6 +116,14 @@ impl From<OsString> for Error {
 	fn from(e: OsString) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::OsString(format!("{:?}", e))),
+		}
+	}
+}
+
+impl From<toml::de::Error> for Error {
+	fn from(e: toml::de::Error) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::TomlError(format!("{}", e))),
 		}
 	}
 }
