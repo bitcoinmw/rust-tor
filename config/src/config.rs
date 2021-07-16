@@ -16,6 +16,7 @@ use crate::comments::build_toml;
 use crate::{Error, ErrorKind};
 use clap::load_yaml;
 use clap::App;
+use std::convert::TryInto;
 use std::fs;
 use std::fs::{canonicalize, metadata};
 use std::path::Path;
@@ -39,6 +40,11 @@ pub struct TorConfig {
 	pub directory_servers: Vec<String>,
 	/// DB Root
 	pub db_root: String,
+	/// Maximum time before refreshing of DS info
+	/// must occur on startup
+	pub ds_refresh_timeout: u64,
+	/// The frequency to refresh the DS info in milliseconds
+	pub ds_refresh_frequency: u64,
 }
 
 // include build information
@@ -104,6 +110,10 @@ pub fn get_config() -> Result<TorConfig, Error> {
 	};
 
 	let directory_servers = vec![];
+	// two weeks
+	let ds_refresh_timeout = 14 * 24 * 60 * 60 * 1000;
+	// 10 minutes
+	let ds_refresh_frequency = 10 * 60 * 1000;
 
 	let db_root = {
 		let mut buf = PathBuf::from(&config_file);
@@ -120,6 +130,8 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		version,
 		directory_servers,
 		db_root,
+		ds_refresh_timeout,
+		ds_refresh_frequency,
 	};
 
 	// try to get it, if not there, create it
@@ -166,6 +178,7 @@ fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 		}
 	};
 
+	// get the directory servers
 	config.directory_servers = match general.get("directory_servers") {
 		Some(ds) => match ds.as_array() {
 			Some(ds) => {
@@ -190,7 +203,48 @@ fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 			}
 		},
 		None => {
-			return Err(ErrorKind::TomlError("general.version must be a string".to_string()).into())
+			return Err(ErrorKind::TomlError(
+				"general.directory_servers must be specified".to_string(),
+			)
+			.into())
+		}
+	};
+
+	// get the ds_refresh_timeout
+	config.ds_refresh_timeout = match general.get("ds_refresh_timeout") {
+		Some(ds_refresh_timeout) => match ds_refresh_timeout.as_integer() {
+			Some(ds_refresh_timeout) => ds_refresh_timeout.try_into()?,
+			None => {
+				return Err(ErrorKind::TomlError(
+					"general.ds_refresh_timeout must be an integer".to_string(),
+				)
+				.into());
+			}
+		},
+		None => {
+			return Err(ErrorKind::TomlError(
+				"general.ds_refresh_timeout must be specified".to_string(),
+			)
+			.into());
+		}
+	};
+
+	// get the ds_refresh_frequency
+	config.ds_refresh_frequency = match general.get("ds_refresh_frequency") {
+		Some(ds_refresh_frequency) => match ds_refresh_frequency.as_integer() {
+			Some(ds_refresh_frequency) => ds_refresh_frequency.try_into()?,
+			None => {
+				return Err(ErrorKind::TomlError(
+					"general.ds_refresh_frequency must be an integer".to_string(),
+				)
+				.into());
+			}
+		},
+		None => {
+			return Err(ErrorKind::TomlError(
+				"general.ds_refresh_frequency must be specified".to_string(),
+			)
+			.into());
 		}
 	};
 

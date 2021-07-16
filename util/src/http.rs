@@ -14,7 +14,6 @@
 use crate::{Error, ErrorKind};
 use hyper::client::HttpConnector;
 use hyper::header::{ACCEPT, CONTENT_TYPE, USER_AGENT};
-use hyper::http::request::Builder;
 use hyper::{body, Body, Client, Request};
 use hyper_rustls::HttpsConnector;
 use hyper_timeout::TimeoutConnector;
@@ -41,7 +40,6 @@ lazy_static! {
 /// reusable context for making HTTP(s) requests
 pub struct UrlContext {
 	client: Client<TimeoutConnector<HttpsConnector<HttpConnector>>>,
-	builder: Builder,
 }
 
 /// build the context. Use timeout values passed in
@@ -59,15 +57,14 @@ pub fn build_connector_context(
 	connector.set_write_timeout(Some(Duration::from_secs(write_timeout_secs)));
 
 	let client = Client::builder().build::<_, Body>(connector);
-	let builder = Request::builder();
 
-	UrlContext { client, builder }
+	UrlContext { client }
 }
 
 /// asynchronously make the request
-pub async fn async_do_get(url: &str, context: UrlContext) -> Result<String, Error> {
-	let req = context
-		.builder
+pub async fn async_do_get(url: &str, context: &UrlContext) -> Result<String, Error> {
+	let builder = Request::builder();
+	let req = builder
 		.method("get")
 		.uri(url)
 		.header(USER_AGENT, "rust-tor-client")
@@ -88,6 +85,6 @@ pub async fn async_do_get(url: &str, context: UrlContext) -> Result<String, Erro
 /// to other threads due to the use of await.
 /// Note: only a single HTTP request at a time due to the global Mutex.
 /// This is ok for our uses, but should be fixed if more is needed from this module.
-pub fn do_get(url: &str, context: UrlContext) -> Result<String, Error> {
+pub fn do_get(url: &str, context: &UrlContext) -> Result<String, Error> {
 	RUNTIME.lock().unwrap().block_on(async_do_get(url, context))
 }

@@ -17,12 +17,10 @@ use chrono::{DateTime, Local, Utc};
 use std::fs::{canonicalize, metadata, File, OpenOptions};
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::Mutex;
 use std::time::SystemTime;
 
 /// The main logging object
 pub struct Log {
-	lock: Option<Mutex<LogParams>>,
 	data: Option<LogParams>,
 }
 
@@ -36,6 +34,7 @@ pub struct LogParams {
 	max_age_millis: u128,
 	file_header: String,
 	show_timestamp: bool,
+	show_stdout: bool,
 }
 
 impl LogParams {
@@ -93,10 +92,19 @@ impl LogParams {
 			let formatted_ts = date.format("%Y-%m-%d %H:%M:%S");
 			self.file
 				.write(format!("[{}]: ", formatted_ts).as_bytes())?;
+			if self.show_stdout {
+				print!("[{}]: ", formatted_ts);
+			}
 		}
 		// finally log the line followed by a newline.
 		self.file.write(line_bytes)?;
 		self.file.write(&[10u8])?; // newline
+
+		// if stdout is specified log to stdout too
+		if self.show_stdout {
+			println!("{}", line);
+		}
+
 		Ok(())
 	}
 }
@@ -105,7 +113,6 @@ impl Log {
 	/// create a new Log object to use based on specified values
 	pub fn new(
 		file_path: &str,
-		lock: bool,
 		max_size: u64,
 		max_age_millis: u128,
 		show_timestamp: bool,
@@ -135,47 +142,26 @@ impl Log {
 			cur_size = file_header.len() as u64 + 1;
 		}
 
-		// return Log object based on whether lock is specified
-		if lock {
-			Ok(Log {
-				lock: Some(Mutex::new(LogParams {
-					max_size,
-					cur_size,
-					file,
-					file_path,
-					max_age_millis,
-					init_age_millis,
-					show_timestamp,
-					file_header,
-				})),
-				data: None,
-			})
-		} else {
-			Ok(Log {
-				data: Some(LogParams {
-					max_size,
-					cur_size,
-					file,
-					file_path,
-					max_age_millis,
-					init_age_millis,
-					show_timestamp,
-					file_header,
-				}),
-				lock: None,
-			})
-		}
+		// return Log object
+		Ok(Log {
+			data: Some(LogParams {
+				max_size,
+				cur_size,
+				file,
+				file_path,
+				max_age_millis,
+				init_age_millis,
+				show_timestamp,
+				file_header,
+				show_stdout: true,
+			}),
+		})
 	}
 
 	/// Entry point for logging
 	pub fn log(&mut self, line: &str) -> Result<(), Error> {
-		if self.lock.is_some() {
-			let log_params = &mut *self.lock.as_ref().unwrap().lock().unwrap();
-			log_params.log(line)?;
-		} else {
-			let log_params = &mut *self.data.as_mut().unwrap();
-			log_params.log(line)?;
-		};
+		let log_params = &mut *self.data.as_mut().unwrap();
+		log_params.log(line)?;
 
 		Ok(())
 	}

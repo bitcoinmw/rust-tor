@@ -12,6 +12,8 @@ edition = "2018"
 [dependencies]
 
 grin_store = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master"}
+grin_core = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master"}
+grin_util = { git = "https://github.com/bitcoinmw/bitcoinmw", branch = "master"}
 
 tokio = { version = "0.2", features = ["full"] }
 lazy_static = "1.4"

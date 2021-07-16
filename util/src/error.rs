@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use crate::logger::Log;
+
+use grin_util::StopState;
+use std::sync::MutexGuard;
+use std::sync::PoisonError;
+use std::sync::RwLockWriteGuard;
+
 use failure::{Backtrace, Context, Fail};
 use std::ffi::OsString;
 use std::fmt::{self, Display};
+use std::num::ParseIntError;
+use std::num::TryFromIntError;
 
 #[derive(Debug, Fail)]
 pub struct Error {
@@ -48,6 +57,11 @@ pub enum ErrorKind {
 	/// Store Error
 	#[fail(display = "Store Error: {}", _0)]
 	StoreError(String),
+	/// Parse Int Error
+	#[fail(display = "ParseInt Error: {}", _0)]
+	ParseIntError(String),
+	#[fail(display = "Poison Error: {}", _0)]
+	PoisonError(String),
 }
 
 impl Display for Error {
@@ -135,6 +149,38 @@ impl From<grin_store::Error> for Error {
 	fn from(e: grin_store::Error) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::StoreError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<ParseIntError> for Error {
+	fn from(e: ParseIntError) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::ParseIntError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<TryFromIntError> for Error {
+	fn from(e: TryFromIntError) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::ParseIntError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<PoisonError<RwLockWriteGuard<'_, StopState>>> for Error {
+	fn from(e: PoisonError<RwLockWriteGuard<'_, StopState>>) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::PoisonError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<std::sync::PoisonError<MutexGuard<'_, Log>>> for Error {
+	fn from(e: PoisonError<MutexGuard<'_, Log>>) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::PoisonError(format!("{}", e))),
 		}
 	}
 }

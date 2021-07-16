@@ -13,8 +13,11 @@
 // limitations under the License.
 
 pub use crate::error::{Error, ErrorKind};
+pub use grin_core as core;
 pub use grin_store as store;
 
 mod error;
 pub mod http;
 pub mod logger;
+
+pub use grin_util::StopState;

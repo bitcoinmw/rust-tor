@@ -13,11 +13,15 @@
 // limitations under the License.
 
 use tor_config::config::get_config;
+use tor_tcp::ds_load::{build_ds_context, get_latest_valid_dsinfo, start_dsinfo_refresh_thread};
 use tor_util as util;
-use util::Error;
-//use util::http::{build_connector_context, do_get};
-use tor_tcp::ds_load::build_ds_context;
 use util::logger::Log;
+use util::Error;
+use util::StopState;
+
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
 
 fn main() {
 	let exit_code = real_main();
@@ -35,8 +39,20 @@ fn real_main() -> i32 {
 }
 
 fn main_with_result() -> Result<(), Error> {
+	let stop_state = Arc::new(RwLock::new(StopState::new()));
 	let config = get_config()?;
+	let mainlog = Arc::new(Mutex::new(Log::new(
+		"./logs/mainlog.log",
+		100,
+		1000 * 60,
+		true,
+		"header_url_ABC_DEF",
+	)?));
 	let ds_context = build_ds_context(&config)?;
+	let ds_info = get_latest_valid_dsinfo(&config, &ds_context)?;
+	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
+
+	println!("ds_infohostlen={}", ds_info.hosts.len());
 
 	println!("config={:?}", config);
 	println!("config.version = {}", config.version);
@@ -50,26 +66,25 @@ fn main_with_result() -> Result<(), Error> {
 		println!("response={}", response);
 	*/
 
-	let mut log = Log::new(
-		"./test.log",
-		true,
-		100,
-		1000 * 60,
-		true,
-		"header_url_ABC_DEF",
-	)?;
-
 	let mut count = 0;
 	loop {
 		println!("logging");
-		log.log("test1")?;
-		log.log("test2")?;
+		{
+			let mut mainlog = mainlog.lock()?;
+			(*mainlog).log("test1")?;
+			(*mainlog).log("test2")?;
+		}
 		std::thread::sleep(std::time::Duration::from_secs(5));
 		count += 1;
-		if count >= 1_000_000 {
+		if count >= 3000 {
 			break;
 		}
 	}
 
+	{
+		let stop_state = stop_state.write()?;
+		stop_state.stop();
+	}
+	std::thread::sleep(std::time::Duration::from_secs(5));
 	Ok(())
 }

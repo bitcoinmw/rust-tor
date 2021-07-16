@@ -42,6 +42,12 @@ directory_servers = [\n\
 \t\"199.58.81.140\",\n\
 ]\n\
 \n\
+# Two weeks\n\
+ds_refresh_timeout = 1209600000\n\
+\n\
+# Ten minutes\n\
+ds_refresh_frequency = 600000\n\
+\n\
 ";
 
 /// This function builds the toml file based on the TorConfig argument
