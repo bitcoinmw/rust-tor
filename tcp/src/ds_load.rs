@@ -145,7 +145,6 @@ fn update_db(directory_servers: Vec<String>, context: &DSContext) -> Result<(), 
 			hosts.push(host_info);
 		}
 	}
-	println!("loading to db");
 	let load_time = SystemTime::now()
 		.duration_since(SystemTime::UNIX_EPOCH)
 		.expect("time went backwards")
@@ -158,7 +157,6 @@ fn update_db(directory_servers: Vec<String>, context: &DSContext) -> Result<(), 
 		batch.put_ser(HOSTS_KEY, &dsinfo)?;
 		batch.commit()?;
 	}
-	println!("db loaded");
 
 	Ok(())
 }
@@ -222,7 +220,6 @@ pub fn get_latest_valid_dsinfo(config: &TorConfig, context: &DSContext) -> Resul
 	let mut hosts = get_hosts_from_db(context)?;
 	if hosts.is_none() || now - hosts.as_ref().unwrap().load_time > config.ds_refresh_timeout.into()
 	{
-		println!("updating db");
 		update_db(config.directory_servers.clone(), context)?;
 		hosts = get_hosts_from_db(context)?;
 	}

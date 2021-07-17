@@ -45,6 +45,13 @@ pub struct TorConfig {
 	pub ds_refresh_timeout: u64,
 	/// The frequency to refresh the DS info in milliseconds
 	pub ds_refresh_frequency: u64,
+	/// Location of the mainlog file
+	pub mainlog: String,
+	/// Size at which a log rotation occurs for the mainlog
+	pub mainlog_rotationsize: u64,
+	/// Time at which a log rotation occurs for the mainlog
+	/// in milliseconds
+	pub mainlog_rotationtime: u64,
 }
 
 // include build information
@@ -78,6 +85,12 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		// we have to create it to use canonicalize
 		if !fsutils::path_exists(&file_name) {
 			fsutils::create_file(&file_name);
+			// also create logs directory
+			let mut config_path = PathBuf::new();
+			config_path.push(file_name.clone());
+			config_path.pop();
+			config_path.push("logs");
+			fsutils::mkdir(&config_path.clone().into_os_string().into_string().unwrap());
 		}
 		// return canonicalized path
 		canonicalize(PathBuf::from(file_name))?
@@ -99,6 +112,10 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		}
 		// mkdir for default if it doesn't exist
 		fsutils::mkdir(&config_path.clone().into_os_string().into_string().unwrap());
+		// also mkdir for logs
+		config_path.push("logs");
+		fsutils::mkdir(&config_path.clone().into_os_string().into_string().unwrap());
+		config_path.pop();
 		config_path.push(TOML_NAME);
 		let path = &config_path.clone().into_os_string().into_string().unwrap();
 		// create the file if it's not there
@@ -114,6 +131,20 @@ pub fn get_config() -> Result<TorConfig, Error> {
 	let ds_refresh_timeout = 14 * 24 * 60 * 60 * 1000;
 	// 10 minutes
 	let ds_refresh_frequency = 10 * 60 * 1000;
+
+	// mainlog configs
+	let mut config_path = PathBuf::new();
+	config_path.push(config_file.clone());
+	config_path.pop();
+	config_path.push("logs/mainlog.log");
+	let mainlog = config_path
+		.clone()
+		.into_os_string()
+		.into_string()
+		.unwrap()
+		.to_string();
+	let mainlog_rotationsize = 10 * 1024 * 1024; // 10 mb
+	let mainlog_rotationtime = 60 * 60 * 1000; // 1 hour
 
 	let db_root = {
 		let mut buf = PathBuf::from(&config_file);
@@ -132,6 +163,9 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		db_root,
 		ds_refresh_timeout,
 		ds_refresh_frequency,
+		mainlog,
+		mainlog_rotationsize,
+		mainlog_rotationtime,
 	};
 
 	// try to get it, if not there, create it
@@ -243,6 +277,53 @@ fn update_config(config: &mut TorConfig, value: String) -> Result<(), Error> {
 		None => {
 			return Err(ErrorKind::TomlError(
 				"general.ds_refresh_frequency must be specified".to_string(),
+			)
+			.into());
+		}
+	};
+
+	// make sure there's a logging section
+	let logging = value.get("logging");
+	let logging = match logging {
+		Some(logging) => logging,
+		None => {
+			return Err(
+				ErrorKind::TomlError("logging section must be specified".to_string()).into(),
+			)
+		}
+	};
+
+	config.mainlog_rotationsize = match logging.get("mainlog_rotationsize") {
+		Some(mainlog_rotationsize) => match mainlog_rotationsize.as_integer() {
+			Some(mainlog_rotationsize) => mainlog_rotationsize.try_into()?,
+			None => {
+				return Err(ErrorKind::TomlError(
+					"logging.mainlog_rotationsize must be an integer".to_string(),
+				)
+				.into());
+			}
+		},
+		None => {
+			return Err(ErrorKind::TomlError(
+				"logging.mainlog_rotationsize must be specified".to_string(),
+			)
+			.into());
+		}
+	};
+
+	config.mainlog_rotationtime = match logging.get("mainlog_rotationtime") {
+		Some(mainlog_rotationtime) => match mainlog_rotationtime.as_integer() {
+			Some(mainlog_rotationtime) => mainlog_rotationtime.try_into()?,
+			None => {
+				return Err(ErrorKind::TomlError(
+					"logging.mainlog_rotationtime must be an integer".to_string(),
+				)
+				.into());
+			}
+		},
+		None => {
+			return Err(ErrorKind::TomlError(
+				"logging.mainlog_rotationtime must be specified".to_string(),
 			)
 			.into());
 		}

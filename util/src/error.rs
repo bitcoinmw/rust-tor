@@ -24,6 +24,7 @@ use std::ffi::OsString;
 use std::fmt::{self, Display};
 use std::num::ParseIntError;
 use std::num::TryFromIntError;
+use std::time::SystemTimeError;
 
 #[derive(Debug, Fail)]
 pub struct Error {
@@ -45,7 +46,7 @@ pub enum ErrorKind {
 	/// Hyper Error
 	#[fail(display = "Hyper Error: {}", _0)]
 	Hyper(String),
-	/// Poison Error
+	/// OsString Error
 	#[fail(display = "OsString Error: {}", _0)]
 	OsString(String),
 	/// Path not found
@@ -62,6 +63,9 @@ pub enum ErrorKind {
 	ParseIntError(String),
 	#[fail(display = "Poison Error: {}", _0)]
 	PoisonError(String),
+	/// SystemTimeError
+	#[fail(display = "SystemTimeError Error: {}", _0)]
+	SystemTimeError(String),
 }
 
 impl Display for Error {
@@ -181,6 +185,14 @@ impl From<std::sync::PoisonError<MutexGuard<'_, Log>>> for Error {
 	fn from(e: PoisonError<MutexGuard<'_, Log>>) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::PoisonError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<SystemTimeError> for Error {
+	fn from(e: SystemTimeError) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::SystemTimeError(format!("{}", e))),
 		}
 	}
 }

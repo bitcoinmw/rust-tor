@@ -12,16 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use tor_config::config::get_config;
+use tor_config::config::{get_config, TorConfig};
 use tor_tcp::ds_load::{build_ds_context, get_latest_valid_dsinfo, start_dsinfo_refresh_thread};
 use tor_util as util;
 use util::logger::Log;
 use util::Error;
 use util::StopState;
 
+use chrono::prelude::DateTime;
+use chrono::Local;
+use chrono::Utc;
+use num_format::{Locale, ToFormattedString};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use std::time::Duration;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
+
+// include build information
+pub mod built_info {
+	include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
 
 fn main() {
 	let exit_code = real_main();
@@ -38,37 +50,120 @@ fn real_main() -> i32 {
 	}
 }
 
+fn show_param(key: &str, value: &str, mainlog: Arc<Mutex<Log>>) -> Result<(), Error> {
+	let mut mainlog = mainlog.lock()?;
+	(*mainlog).log(&format!("{:21}: '{}'", key, value,))?;
+
+	Ok(())
+}
+
+fn print_config(config: &TorConfig, mainlog: Arc<Mutex<Log>>) -> Result<(), Error> {
+	{
+		let mut mainlog = mainlog.lock()?;
+		(*mainlog).log(&format!(
+			"Starting Rust Tor Daemon version: {}",
+			built_info::PKG_VERSION.to_string()
+		))?;
+		(*mainlog).log(
+			"\
+------------------------------------------------------------------------------",
+		)?;
+	}
+	show_param("config_file", &config.config_file, mainlog.clone())?;
+
+	show_param("config file version", &config.version, mainlog.clone())?;
+
+	show_param("db_root", &config.db_root, mainlog.clone())?;
+
+	show_param(
+		"directory_servers.len",
+		&format!("{}", &config.directory_servers.len()),
+		mainlog.clone(),
+	)?;
+
+	show_param(
+		"ds_refresh_timeout",
+		&format!(
+			"{} ms",
+			&config.ds_refresh_timeout.to_formatted_string(&Locale::en)
+		),
+		mainlog.clone(),
+	)?;
+
+	show_param(
+		"ds_refresh_frequency",
+		&format!(
+			"{} ms",
+			&config.ds_refresh_frequency.to_formatted_string(&Locale::en)
+		),
+		mainlog.clone(),
+	)?;
+
+	show_param("mainlog", &config.mainlog, mainlog.clone())?;
+
+	show_param(
+		"mainlog_rotationsize",
+		&format!(
+			"{} bytes",
+			&config.mainlog_rotationsize.to_formatted_string(&Locale::en)
+		),
+		mainlog.clone(),
+	)?;
+
+	show_param(
+		"mainlog_rotationtime",
+		&format!(
+			"{} ms",
+			&config.mainlog_rotationtime.to_formatted_string(&Locale::en)
+		),
+		mainlog.clone(),
+	)?;
+
+	let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+	let d = UNIX_EPOCH + Duration::from_secs(timestamp);
+	let datetime = DateTime::<Utc>::from(d).with_timezone(&Local);
+	let timestamp_str = datetime.format("%Y-%m-%d %H:%M:%S %z").to_string();
+
+	{
+		let mut mainlog = mainlog.lock()?;
+		(*mainlog).log(
+			"\
+------------------------------------------------------------------------------",
+		)?;
+		(*mainlog).log(&format!("Rust Tor Daemon started at: {}", timestamp_str,))?;
+	}
+
+	Ok(())
+}
+
 fn main_with_result() -> Result<(), Error> {
 	let stop_state = Arc::new(RwLock::new(StopState::new()));
 	let config = get_config()?;
 	let mainlog = Arc::new(Mutex::new(Log::new(
-		"./logs/mainlog.log",
-		100,
-		1000 * 60,
-		true,
-		"header_url_ABC_DEF",
+		&config.mainlog,
+		config.mainlog_rotationsize,
+		config.mainlog_rotationtime.into(),
+		false,
+		"MainLog - Tor (Rust)\n\
+------------------------------------------------------------------------------",
 	)?));
+
+	print_config(&config, mainlog.clone())?;
+
 	let ds_context = build_ds_context(&config)?;
 	let ds_info = get_latest_valid_dsinfo(&config, &ds_context)?;
 	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
 
-	println!("ds_infohostlen={}", ds_info.hosts.len());
+	{
+		let mut mainlog = mainlog.lock()?;
+		(*mainlog).update_show_stdout(false)?;
+		(*mainlog).update_show_timestamp(true)?;
 
-	println!("config={:?}", config);
-	println!("config.version = {}", config.version);
-	/*
-		let context = build_connector_context(20, 20, 20);
-		let response = do_get(
-			"http://86.59.21.38/tor/status-vote/current/consensus/",
-			context,
-		)?;
-
-		println!("response={}", response);
-	*/
+		(*mainlog).log(&format!("Found {} hosts.", ds_info.hosts.len()))?;
+	}
 
 	let mut count = 0;
 	loop {
-		println!("logging");
 		{
 			let mut mainlog = mainlog.lock()?;
 			(*mainlog).log("test1")?;

@@ -165,4 +165,18 @@ impl Log {
 
 		Ok(())
 	}
+
+	/// Update the show_timestamp parameter for this logger
+	pub fn update_show_timestamp(&mut self, show: bool) -> Result<(), Error> {
+		let log_params = &mut *self.data.as_mut().unwrap();
+		log_params.show_timestamp = show;
+		Ok(())
+	}
+
+	/// Update the show_stdout parameter for this logger
+	pub fn update_show_stdout(&mut self, show: bool) -> Result<(), Error> {
+		let log_params = &mut *self.data.as_mut().unwrap();
+		log_params.show_stdout = show;
+		Ok(())
+	}
 }
