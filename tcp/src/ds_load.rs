@@ -39,8 +39,8 @@ pub struct DSContext {
 
 #[derive(Debug)]
 pub struct HostInfo {
-	host: String,
-	port: u16,
+	pub host: String,
+	pub port: u16,
 }
 
 impl Writeable for HostInfo {

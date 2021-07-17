@@ -13,3 +13,6 @@ edition = "2018"
 
 tor_util = { path = "../util", version = "0.0.1" }
 tor_config = { path = "../config", version = "0.0.1" }
+
+tor-proto = "0.0.0"
+arti-tor-client = "0.0.0"

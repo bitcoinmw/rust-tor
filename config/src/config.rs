@@ -52,6 +52,8 @@ pub struct TorConfig {
 	/// Time at which a log rotation occurs for the mainlog
 	/// in milliseconds
 	pub mainlog_rotationtime: u64,
+	/// Debug
+	pub debug: bool,
 }
 
 // include build information
@@ -126,6 +128,8 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		config_path.into_os_string().into_string().unwrap()
 	};
 
+	let debug = args.is_present("debug");
+
 	let directory_servers = vec![];
 	// two weeks
 	let ds_refresh_timeout = 14 * 24 * 60 * 60 * 1000;
@@ -166,6 +170,7 @@ pub fn get_config() -> Result<TorConfig, Error> {
 		mainlog,
 		mainlog_rotationsize,
 		mainlog_rotationtime,
+		debug,
 	};
 
 	// try to get it, if not there, create it

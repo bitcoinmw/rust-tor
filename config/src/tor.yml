@@ -8,3 +8,8 @@ args:
         long: config
         value_name: FILE
         takes_value: true
+    - debug:
+        help: Whether to print debugging information
+        short: d
+        long: debug
+        takes_value: false

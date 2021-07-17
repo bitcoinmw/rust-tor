@@ -12,5 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod circuit;
-pub mod ds_load;
+use tor_util::Error;
+
+use crate::ds_load::DSInfo;
+
+use std::io::{Read, Write};
+use std::net::TcpStream;
+
+pub struct Circuit {}
+
+pub fn build_circuit(dsinfo: &DSInfo) -> Result<Circuit, Error> {
+	let conn = format!("{}:{}", dsinfo.hosts[3].host, dsinfo.hosts[3].port);
+
+	Ok(Circuit {})
+}

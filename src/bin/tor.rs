@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use tor_config::config::{get_config, TorConfig};
+use tor_tcp::circuit::build_circuit;
 use tor_tcp::ds_load::{build_ds_context, get_latest_valid_dsinfo, start_dsinfo_refresh_thread};
 use tor_util as util;
 use util::logger::Log;
@@ -60,6 +61,10 @@ fn show_param(key: &str, value: &str, mainlog: Arc<Mutex<Log>>) -> Result<(), Er
 fn print_config(config: &TorConfig, mainlog: Arc<Mutex<Log>>) -> Result<(), Error> {
 	{
 		let mut mainlog = mainlog.lock()?;
+		(*mainlog).log(
+			"\
+------------------------------------------------------------------------------",
+		)?;
 		(*mainlog).log(&format!(
 			"Starting Rust Tor Daemon version: {}",
 			built_info::PKG_VERSION.to_string()
@@ -119,6 +124,12 @@ fn print_config(config: &TorConfig, mainlog: Arc<Mutex<Log>>) -> Result<(), Erro
 		mainlog.clone(),
 	)?;
 
+	show_param(
+		"print debugging info",
+		if config.debug { "ON" } else { "OFF" },
+		mainlog.clone(),
+	)?;
+
 	let timestamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 	let d = UNIX_EPOCH + Duration::from_secs(timestamp);
 	let datetime = DateTime::<Utc>::from(d).with_timezone(&Local);
@@ -131,6 +142,10 @@ fn print_config(config: &TorConfig, mainlog: Arc<Mutex<Log>>) -> Result<(), Erro
 ------------------------------------------------------------------------------",
 		)?;
 		(*mainlog).log(&format!("Rust Tor Daemon started at: {}", timestamp_str,))?;
+		(*mainlog).log(
+			"\
+------------------------------------------------------------------------------",
+		)?
 	}
 
 	Ok(())
@@ -152,14 +167,20 @@ fn main_with_result() -> Result<(), Error> {
 
 	let ds_context = build_ds_context(&config)?;
 	let ds_info = get_latest_valid_dsinfo(&config, &ds_context)?;
+	build_circuit(&ds_info)?;
 	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
 
 	{
 		let mut mainlog = mainlog.lock()?;
-		(*mainlog).update_show_stdout(false)?;
+		if !config.debug {
+			(*mainlog).update_show_stdout(false)?;
+		}
 		(*mainlog).update_show_timestamp(true)?;
 
 		(*mainlog).log(&format!("Found {} hosts.", ds_info.hosts.len()))?;
+		for i in 0..10 {
+			(*mainlog).log(&format!("host[{}]={:?}.", i, ds_info.hosts[i]))?;
+		}
 	}
 
 	let mut count = 0;

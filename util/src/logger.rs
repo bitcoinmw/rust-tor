@@ -21,7 +21,7 @@ use std::time::SystemTime;
 
 /// The main logging object
 pub struct Log {
-	data: Option<LogParams>,
+	data: LogParams,
 }
 
 /// The data that is held by the Log object
@@ -144,7 +144,7 @@ impl Log {
 
 		// return Log object
 		Ok(Log {
-			data: Some(LogParams {
+			data: LogParams {
 				max_size,
 				cur_size,
 				file,
@@ -154,13 +154,13 @@ impl Log {
 				show_timestamp,
 				file_header,
 				show_stdout: true,
-			}),
+			},
 		})
 	}
 
 	/// Entry point for logging
 	pub fn log(&mut self, line: &str) -> Result<(), Error> {
-		let log_params = &mut *self.data.as_mut().unwrap();
+		let log_params = &mut self.data;
 		log_params.log(line)?;
 
 		Ok(())
@@ -168,14 +168,14 @@ impl Log {
 
 	/// Update the show_timestamp parameter for this logger
 	pub fn update_show_timestamp(&mut self, show: bool) -> Result<(), Error> {
-		let log_params = &mut *self.data.as_mut().unwrap();
+		let log_params = &mut self.data;
 		log_params.show_timestamp = show;
 		Ok(())
 	}
 
 	/// Update the show_stdout parameter for this logger
 	pub fn update_show_stdout(&mut self, show: bool) -> Result<(), Error> {
-		let log_params = &mut *self.data.as_mut().unwrap();
+		let log_params = &mut self.data;
 		log_params.show_stdout = show;
 		Ok(())
 	}
