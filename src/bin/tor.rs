@@ -167,8 +167,7 @@ fn main_with_result() -> Result<(), Error> {
 
 	let ds_context = build_ds_context(&config)?;
 	let ds_info = get_latest_valid_dsinfo(&config, &ds_context)?;
-	build_circuit(&ds_info)?;
-	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
+	let runtime = Box::leak(Box::new(tor_rtcompat::create_runtime()?));
 
 	{
 		let mut mainlog = mainlog.lock()?;
@@ -176,7 +175,13 @@ fn main_with_result() -> Result<(), Error> {
 			(*mainlog).update_show_stdout(false)?;
 		}
 		(*mainlog).update_show_timestamp(true)?;
+	}
 
+	build_circuit(&ds_info, &mainlog, runtime)?;
+	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
+
+	{
+		let mut mainlog = mainlog.lock()?;
 		(*mainlog).log(&format!("Found {} hosts.", ds_info.hosts.len()))?;
 		for i in 0..10 {
 			(*mainlog).log(&format!("host[{}]={:?}.", i, ds_info.hosts[i]))?;

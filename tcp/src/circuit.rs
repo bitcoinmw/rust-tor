@@ -12,17 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use tor_util::Error;
-
+use crate::channel::build_channel;
 use crate::ds_load::DSInfo;
-
-use std::io::{Read, Write};
-use std::net::TcpStream;
+use std::sync::Arc;
+use std::sync::Mutex;
+use tor_rtcompat::Runtime;
+use tor_util::logger::Log;
+use tor_util::Error;
 
 pub struct Circuit {}
 
-pub fn build_circuit(dsinfo: &DSInfo) -> Result<Circuit, Error> {
-	let conn = format!("{}:{}", dsinfo.hosts[3].host, dsinfo.hosts[3].port);
-
+pub fn build_circuit(
+	dsinfo: &DSInfo,
+	mainlog: &Arc<Mutex<Log>>,
+	runtime: &mut impl Runtime,
+) -> Result<Circuit, Error> {
+	let _channel = build_channel(
+		dsinfo.hosts[3].host.clone(),
+		dsinfo.hosts[3].port,
+		runtime,
+		mainlog,
+	);
 	Ok(Circuit {})
 }

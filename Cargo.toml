@@ -27,6 +27,8 @@ tor_util = { path = "./util", version = "0.0.1" }
 tor_config = { path = "./config", version = "0.0.1" }
 tor_tcp = { path = "./tcp", version = "0.0.1" }
 tor_controller = { path = "./controller", version = "0.0.1" }
+tor-rtcompat = { path= "./tor-rtcompat", features=["tokio"] }
+
 
 [build-dependencies]
 built = { version = "0.4", features = ["git2"]}
