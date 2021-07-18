@@ -14,4 +14,9 @@ edition = "2018"
 tor_util = { path = "../util", version = "0.0.1" }
 tor_config = { path = "../config", version = "0.0.1" }
 tor-proto = { path = "../tor-proto" }
-tor-rtcompat = { path= "../tor-rtcompat", features=["tokio"] }
+tor-rtcompat = { path = "../tor-rtcompat", features=["tokio"] }
+tor-linkspec = { path = "../tor-linkspec" }
+tor-llcrypto = { path = "../tor-llcrypto" }
+
+hex-literal = "0.3.1"
+futures = "0.3.13"
