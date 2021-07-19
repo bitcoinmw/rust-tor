@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use hex_literal::hex;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tor_linkspec::OwnedChanTarget;
-use tor_llcrypto::pk::ed25519::Ed25519Identity;
-use tor_llcrypto::pk::rsa::RsaIdentity;
 use tor_proto::channel::ChannelBuilder;
 use tor_rtcompat::tls::TlsConnector;
 use tor_rtcompat::CertifiedConn;
@@ -32,9 +29,6 @@ use futures::channel::mpsc;
 use futures::SinkExt;
 
 pub struct Channel {}
-
-const ED_ID: [u8; 32] = hex!("b9f1a5e4f6c3106d7a8bfd622b6bb2b532f999309cd598ab3e527f35db88547a");
-const RSA_ID: [u8; 20] = hex!("5492e760648aabb7bec08bc87e8f72f55fbba90d");
 
 fn connect(
 	host: String,
@@ -72,10 +66,8 @@ fn connect(
 		}
 		let channel = outboundhs.connect();
 		let channel = channel.await.unwrap();
-		let ed: Ed25519Identity = ED_ID.into();
-		let rsa: RsaIdentity = RSA_ID.into();
-		let target = OwnedChanTarget::new(vec![addr], ed, rsa);
-		let channel = channel.check(&target, &peer_cert, None).unwrap();
+		let mut target = OwnedChanTarget::new(vec![addr], None, None);
+		let channel = channel.check(&mut target, &peer_cert, None).unwrap();
 		let (channel, _reactor) = channel.finish().await.unwrap();
 		tx.send(channel).await.unwrap();
 	});

@@ -218,7 +218,7 @@ impl<T: AsyncRead + AsyncWrite + Send + Unpin + 'static> UnverifiedChannel<T> {
 	/// CPU-intensive.
 	pub fn check<U: ChanTarget + ?Sized>(
 		self,
-		peer: &U,
+		peer: &mut U,
 		peer_cert: &[u8],
 		now: Option<std::time::SystemTime>,
 	) -> Result<VerifiedChannel<T>> {
@@ -230,7 +230,7 @@ impl<T: AsyncRead + AsyncWrite + Send + Unpin + 'static> UnverifiedChannel<T> {
 	/// since that is all we use.
 	fn check_internal<U: ChanTarget + ?Sized>(
 		self,
-		peer: &U,
+		peer: &mut U,
 		peer_cert_sha256: &[u8],
 		now: Option<std::time::SystemTime>,
 	) -> Result<VerifiedChannel<T>> {
@@ -354,26 +354,53 @@ impl<T: AsyncRead + AsyncWrite + Send + Unpin + 'static> UnverifiedChannel<T> {
 		// We do this _last_, since "this is the wrong peer" is
 		// usually a different situation than "this peer couldn't even
 		// identify itself right."
-		if *peer.ed_identity() != ed25519_id {
-			// These need to be optional, just print warning for now
-			println!(
-				"WARN: peer_id not as expected: peer.ed_identity()={:?},ed25519_id={:?}",
-				*peer.ed_identity(),
-				ed25519_id
-			);
-			//return Err(Error::ChanProto("Peer ed25519 id not as expected".into()));
+
+		// Notes on change: We make these optional, but once we know about them,
+		// we populate them for later calls so that they are known. We should
+		// also update any persistent data about these so that we can later
+		// call them with the correct values.
+		match peer.ed_identity() {
+			Some(peer_ed_identity) => {
+				if peer_ed_identity != ed25519_id {
+					return Err(Error::ChanProto("Peer ed25519 id not as expected".into()));
+				}
+			}
+			None => {
+				peer.set_ed_identity(ed25519_id);
+			}
 		}
 
-		if *peer.rsa_identity() != rsa_id {
-			// These need to be optional, just print warning for now
-			println!(
-				"WARN: rsa_id not as expected peer.rsa_identity()={:?},rsa_id={:?}",
-				*peer.rsa_identity(),
-				rsa_id
-			);
-			//return Err(Error::ChanProto("Peer RSA id not as expected".into()));
+		match peer.rsa_identity() {
+			Some(peer_rsa_identity) => {
+				if peer_rsa_identity != rsa_id {
+					return Err(Error::ChanProto("Peer RSA id not as expected".into()));
+				}
+			}
+			None => {
+				peer.set_rsa_identity(rsa_id);
+			}
 		}
+		/*
+				if *peer.ed_identity() != ed25519_id {
+					// These need to be optional, just print warning for now
+					println!(
+						"WARN: peer_id not as expected: peer.ed_identity()={:?},ed25519_id={:?}",
+						*peer.ed_identity(),
+						ed25519_id
+					);
+					//return Err(Error::ChanProto("Peer ed25519 id not as expected".into()));
+				}
 
+				if *peer.rsa_identity() != rsa_id {
+					// These need to be optional, just print warning for now
+					println!(
+						"WARN: rsa_id not as expected peer.rsa_identity()={:?},rsa_id={:?}",
+						*peer.rsa_identity(),
+						rsa_id
+					);
+					//return Err(Error::ChanProto("Peer RSA id not as expected".into()));
+				}
+		*/
 		Ok(VerifiedChannel {
 			link_protocol: self.link_protocol,
 			tls: self.tls,

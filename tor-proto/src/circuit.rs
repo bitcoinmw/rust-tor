@@ -442,8 +442,10 @@ impl ClientCirc {
 	{
 		use crate::crypto::cell::Tor1RelayCrypto;
 		use crate::crypto::handshake::ntor::{NtorClient, NtorPublicKey};
+		// TODO: handle None here. It shouldn't happen by this point,
+		// but should do better at handling the error
 		let key = NtorPublicKey {
-			id: *target.rsa_identity(),
+			id: target.rsa_identity().unwrap(),
 			pk: *target.ntor_onion_key(),
 		};
 		let mut linkspecs = target.linkspecs();
@@ -986,8 +988,10 @@ impl PendingClientCirc {
 		let wrap = Create2Wrap {
 			handshake_type: 0x0002, // ntor
 		};
+		// TODO: handle unwrap error better
+		// shouldn't happen, but need to handle the error somehow here
 		let key = NtorPublicKey {
-			id: *target.rsa_identity(),
+			id: target.rsa_identity().unwrap(),
 			pk: *target.ntor_onion_key(),
 		};
 		// FlowCtrl=1 means that this hop supports authenticated SENDMEs

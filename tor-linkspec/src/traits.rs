@@ -18,21 +18,30 @@ pub trait ChanTarget {
 	// make defining the right associated types rather tricky.
 	fn addrs(&self) -> &[SocketAddr];
 	/// Return the ed25519 identity for this relay.
-	fn ed_identity(&self) -> &pk::ed25519::Ed25519Identity;
+	fn ed_identity(&self) -> Option<pk::ed25519::Ed25519Identity>;
 	/// Return the ed25519 identity key for this relay, if it is valid.
 	///
 	/// This can be costly.
 	fn ed_identity_key(&self) -> Option<pk::ed25519::PublicKey> {
-		self.ed_identity().try_into().ok()
+		match self.ed_identity() {
+			Some(id) => id.try_into().ok(),
+			None => None,
+		}
 	}
 	/// Return the RSA identity for this relay.
-	fn rsa_identity(&self) -> &pk::rsa::RsaIdentity;
+	fn rsa_identity(&self) -> Option<pk::rsa::RsaIdentity>;
 
 	/// Return a new [`crate::OwnedChanTarget`] containing a copy
 	/// of the information in this `ChanTarget`.
 	fn to_owned(&self) -> crate::OwnedChanTarget {
 		crate::OwnedChanTarget::from_chan_target(self)
 	}
+
+	/// Set the ed identity key for this channel target
+	fn set_ed_identity(&mut self, ed: pk::ed25519::Ed25519Identity);
+
+	/// Set the rsa identity key for this channel target
+	fn set_rsa_identity(&mut self, rsa: pk::rsa::RsaIdentity);
 }
 
 /// Information about a Tor relay used to extend a circuit to it.
@@ -45,7 +54,18 @@ pub trait CircTarget: ChanTarget {
 	// of link specifiers, but that's not so easy to do, since it seems
 	// doing so correctly would require default associated types.
 	fn linkspecs(&self) -> Vec<crate::LinkSpec> {
-		let mut result = vec![(*self.ed_identity()).into(), (*self.rsa_identity()).into()];
+		if self.ed_identity().is_none() || self.rsa_identity().is_none() {
+			// TODO: is this ok?
+			// we need to have optional (no keys for first connect)
+			// if we don't yet know them, we return an empty vec
+			// these should be populated by the time this is called,
+			// but should probably do more investigation.
+			return vec![];
+		}
+		let mut result = vec![
+			(self.ed_identity().unwrap()).into(),
+			(self.rsa_identity().unwrap()).into(),
+		];
 		for addr in self.addrs().iter() {
 			result.push(addr.into());
 		}

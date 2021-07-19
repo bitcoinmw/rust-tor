@@ -12,20 +12,26 @@ pub struct OwnedChanTarget {
 	/// Copy of the addresses from the underlying ChanTarget.
 	addrs: Vec<SocketAddr>,
 	/// Copy of the ed25519 id from the underlying ChanTarget.
-	ed_identity: pk::ed25519::Ed25519Identity,
+	ed_identity: Option<pk::ed25519::Ed25519Identity>,
 	/// Copy of the rsa id from the underlying ChanTarget.
-	rsa_identity: pk::rsa::RsaIdentity,
+	rsa_identity: Option<pk::rsa::RsaIdentity>,
 }
 
 impl ChanTarget for OwnedChanTarget {
 	fn addrs(&self) -> &[SocketAddr] {
 		&self.addrs[..]
 	}
-	fn ed_identity(&self) -> &pk::ed25519::Ed25519Identity {
-		&self.ed_identity
+	fn ed_identity(&self) -> Option<pk::ed25519::Ed25519Identity> {
+		self.ed_identity
 	}
-	fn rsa_identity(&self) -> &pk::rsa::RsaIdentity {
-		&self.rsa_identity
+	fn rsa_identity(&self) -> Option<pk::rsa::RsaIdentity> {
+		self.rsa_identity
+	}
+	fn set_ed_identity(&mut self, ed: pk::ed25519::Ed25519Identity) {
+		self.ed_identity = Some(ed);
+	}
+	fn set_rsa_identity(&mut self, rsa: pk::rsa::RsaIdentity) {
+		self.rsa_identity = Some(rsa);
 	}
 }
 
@@ -34,8 +40,8 @@ impl OwnedChanTarget {
 	// TODO: Put this function behind a feature.
 	pub fn new(
 		addrs: Vec<SocketAddr>,
-		ed_identity: pk::ed25519::Ed25519Identity,
-		rsa_identity: pk::rsa::RsaIdentity,
+		ed_identity: Option<pk::ed25519::Ed25519Identity>,
+		rsa_identity: Option<pk::rsa::RsaIdentity>,
 	) -> Self {
 		Self {
 			addrs,
@@ -51,8 +57,8 @@ impl OwnedChanTarget {
 	{
 		OwnedChanTarget {
 			addrs: target.addrs().to_vec(),
-			ed_identity: *target.ed_identity(),
-			rsa_identity: *target.rsa_identity(),
+			ed_identity: target.ed_identity(),
+			rsa_identity: target.rsa_identity(),
 		}
 	}
 }
@@ -89,11 +95,17 @@ impl ChanTarget for OwnedCircTarget {
 	fn addrs(&self) -> &[SocketAddr] {
 		self.chan_target.addrs()
 	}
-	fn ed_identity(&self) -> &pk::ed25519::Ed25519Identity {
+	fn ed_identity(&self) -> Option<pk::ed25519::Ed25519Identity> {
 		self.chan_target.ed_identity()
 	}
-	fn rsa_identity(&self) -> &pk::rsa::RsaIdentity {
+	fn rsa_identity(&self) -> Option<pk::rsa::RsaIdentity> {
 		self.chan_target.rsa_identity()
+	}
+	fn set_ed_identity(&mut self, ed: pk::ed25519::Ed25519Identity) {
+		self.chan_target.set_ed_identity(ed);
+	}
+	fn set_rsa_identity(&mut self, rsa: pk::rsa::RsaIdentity) {
+		self.chan_target.set_rsa_identity(rsa);
 	}
 }
 

@@ -260,19 +260,24 @@ impl Channel {
 	/// Return an error if this channel is somehow mismatched with the
 	/// given target.
 	pub fn check_match<T: ChanTarget + ?Sized>(&self, target: &T) -> Result<()> {
-		if self.peer_ed25519_id() != target.ed_identity() {
+		if target.ed_identity().is_none() || target.rsa_identity().is_none() {
+			return Err(Error::ChanMismatch(
+				"Identity not specified. Please complete connection first.".to_string(),
+			));
+		}
+		if *self.peer_ed25519_id() != target.ed_identity().unwrap() {
 			return Err(Error::ChanMismatch(format!(
 				"Identity {} does not match target {}",
 				self.peer_ed25519_id(),
-				target.ed_identity()
+				target.ed_identity().unwrap()
 			)));
 		}
 
-		if self.peer_rsa_id() != target.rsa_identity() {
+		if *self.peer_rsa_id() != target.rsa_identity().unwrap() {
 			return Err(Error::ChanMismatch(format!(
 				"Identity {} does not match target {}",
 				self.peer_rsa_id(),
-				target.rsa_identity()
+				target.rsa_identity().unwrap()
 			)));
 		}
 
