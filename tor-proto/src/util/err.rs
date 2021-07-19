@@ -137,6 +137,7 @@ impl From<Error> for ReactorError {
 		ReactorError::Err(e)
 	}
 }
+
 #[cfg(test)]
 impl ReactorError {
 	/// Tests only: assert that this is an Error, and return it.

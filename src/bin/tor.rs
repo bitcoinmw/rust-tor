@@ -23,6 +23,7 @@ use util::StopState;
 use chrono::prelude::DateTime;
 use chrono::Local;
 use chrono::Utc;
+use lazy_static::lazy_static;
 use num_format::{Locale, ToFormattedString};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -30,6 +31,10 @@ use std::sync::RwLock;
 use std::time::Duration;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
+
+lazy_static! {
+	static ref MAINLOG: Arc<Mutex<Log>> = Arc::new(Mutex::new(Log::new()));
+}
 
 // include build information
 pub mod built_info {
@@ -154,16 +159,21 @@ fn print_config(config: &TorConfig, mainlog: Arc<Mutex<Log>>) -> Result<(), Erro
 fn main_with_result() -> Result<(), Error> {
 	let stop_state = Arc::new(RwLock::new(StopState::new()));
 	let config = get_config()?;
-	let mainlog = Arc::new(Mutex::new(Log::new(
-		&config.mainlog,
-		config.mainlog_rotationsize,
-		config.mainlog_rotationtime.into(),
-		false,
-		"MainLog - Tor (Rust)\n\
+	//let mainlog = Arc::new(Mutex::new(Log::new()));
+	let mainlog = &MAINLOG;
+	{
+		let mut mainlog = mainlog.lock()?;
+		mainlog.config(
+			&config.mainlog,
+			config.mainlog_rotationsize,
+			config.mainlog_rotationtime.into(),
+			false,
+			"MainLog - Tor (Rust)\n\
 ------------------------------------------------------------------------------",
-	)?));
+		)?;
+	}
 
-	print_config(&config, mainlog.clone())?;
+	print_config(&config, (*mainlog).clone())?;
 
 	let ds_context = build_ds_context(&config)?;
 	let ds_info = get_latest_valid_dsinfo(&config, &ds_context)?;
@@ -178,7 +188,7 @@ fn main_with_result() -> Result<(), Error> {
 	}
 
 	build_circuit(&ds_info, &mainlog, runtime)?;
-	start_dsinfo_refresh_thread(&config, stop_state.clone(), mainlog.clone())?;
+	start_dsinfo_refresh_thread(&config, stop_state.clone(), (*mainlog).clone())?;
 
 	{
 		let mut mainlog = mainlog.lock()?;

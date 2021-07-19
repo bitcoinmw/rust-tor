@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::Error;
+use crate::{Error, ErrorKind};
 use chrono::{DateTime, Local, Utc};
 use std::fs::{canonicalize, metadata, File, OpenOptions};
 use std::io::Write;
@@ -21,7 +21,7 @@ use std::time::SystemTime;
 
 /// The main logging object
 pub struct Log {
-	data: LogParams,
+	params: Option<LogParams>,
 }
 
 /// The data that is held by the Log object
@@ -110,14 +110,20 @@ impl LogParams {
 }
 
 impl Log {
-	/// create a new Log object to use based on specified values
-	pub fn new(
+	/// create a new Log object
+	pub fn new() -> Log {
+		Log { params: None }
+	}
+
+	/// configure the logger
+	pub fn config(
+		&mut self,
 		file_path: &str,
 		max_size: u64,
 		max_age_millis: u128,
 		show_timestamp: bool,
 		file_header: &str,
-	) -> Result<Log, Error> {
+	) -> Result<(), Error> {
 		// create file with append option and create option
 		let mut file = OpenOptions::new()
 			.append(true)
@@ -142,41 +148,51 @@ impl Log {
 			cur_size = file_header.len() as u64 + 1;
 		}
 
-		// return Log object
-		Ok(Log {
-			data: LogParams {
-				max_size,
-				cur_size,
-				file,
-				file_path,
-				max_age_millis,
-				init_age_millis,
-				show_timestamp,
-				file_header,
-				show_stdout: true,
-			},
-		})
+		self.params = Some(LogParams {
+			max_size,
+			cur_size,
+			file,
+			file_path,
+			max_age_millis,
+			init_age_millis,
+			show_timestamp,
+			file_header,
+			show_stdout: true,
+		});
+
+		Ok(())
 	}
 
 	/// Entry point for logging
 	pub fn log(&mut self, line: &str) -> Result<(), Error> {
-		let log_params = &mut self.data;
-		log_params.log(line)?;
-
-		Ok(())
+		match self.params.as_mut() {
+			Some(params) => {
+				params.log(line)?;
+				Ok(())
+			}
+			None => Err(ErrorKind::LogNotConfigured("log params None".to_string()).into()),
+		}
 	}
 
 	/// Update the show_timestamp parameter for this logger
 	pub fn update_show_timestamp(&mut self, show: bool) -> Result<(), Error> {
-		let log_params = &mut self.data;
-		log_params.show_timestamp = show;
-		Ok(())
+		match self.params.as_mut() {
+			Some(params) => {
+				params.show_timestamp = show;
+				Ok(())
+			}
+			None => Err(ErrorKind::LogNotConfigured("log params None".to_string()).into()),
+		}
 	}
 
 	/// Update the show_stdout parameter for this logger
 	pub fn update_show_stdout(&mut self, show: bool) -> Result<(), Error> {
-		let log_params = &mut self.data;
-		log_params.show_stdout = show;
-		Ok(())
+		match self.params.as_mut() {
+			Some(params) => {
+				params.show_stdout = show;
+				Ok(())
+			}
+			None => Err(ErrorKind::LogNotConfigured("log params None".to_string()).into()),
+		}
 	}
 }

@@ -20,8 +20,10 @@ use std::sync::PoisonError;
 use std::sync::RwLockWriteGuard;
 
 use failure::{Backtrace, Context, Fail};
+use futures::task::SpawnError;
 use std::ffi::OsString;
 use std::fmt::{self, Display};
+use std::net::AddrParseError;
 use std::num::ParseIntError;
 use std::num::TryFromIntError;
 use std::time::SystemTimeError;
@@ -49,6 +51,9 @@ pub enum ErrorKind {
 	/// OsString Error
 	#[fail(display = "OsString Error: {}", _0)]
 	OsString(String),
+	/// Log not configured Error
+	#[fail(display = "Log not configured Error: {}", _0)]
+	LogNotConfigured(String),
 	/// Path not found
 	#[fail(display = "Path not found Error: {}", _0)]
 	PathNotFoundError(String),
@@ -58,6 +63,9 @@ pub enum ErrorKind {
 	/// Store Error
 	#[fail(display = "Store Error: {}", _0)]
 	StoreError(String),
+	/// AddrParseError
+	#[fail(display = "AddrParseError: {}", _0)]
+	AddrParseError(String),
 	/// Parse Int Error
 	#[fail(display = "ParseInt Error: {}", _0)]
 	ParseIntError(String),
@@ -66,6 +74,11 @@ pub enum ErrorKind {
 	/// SystemTimeError
 	#[fail(display = "SystemTimeError Error: {}", _0)]
 	SystemTimeError(String),
+	/// SpawnError
+	#[fail(display = "Spawn Error: {}", _0)]
+	SpawnError(String),
+	#[fail(display = "TcpConnectError: {}", _0)]
+	TcpConnectError(String),
 }
 
 impl Display for Error {
@@ -193,6 +206,22 @@ impl From<SystemTimeError> for Error {
 	fn from(e: SystemTimeError) -> Error {
 		Error {
 			inner: Context::new(ErrorKind::SystemTimeError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<SpawnError> for Error {
+	fn from(e: SpawnError) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::SpawnError(format!("{}", e))),
+		}
+	}
+}
+
+impl From<AddrParseError> for Error {
+	fn from(e: AddrParseError) -> Error {
+		Error {
+			inner: Context::new(ErrorKind::AddrParseError(format!("{}", e))),
 		}
 	}
 }

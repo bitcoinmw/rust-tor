@@ -56,7 +56,7 @@
 mod circmap;
 mod codec;
 mod handshake;
-mod reactor;
+pub mod reactor;
 mod unique_id;
 
 use crate::channel::reactor::{CtrlMsg, CtrlResult};

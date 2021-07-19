@@ -988,10 +988,11 @@ impl PendingClientCirc {
 		let wrap = Create2Wrap {
 			handshake_type: 0x0002, // ntor
 		};
-		// TODO: handle unwrap error better
-		// shouldn't happen, but need to handle the error somehow here
+
 		let key = NtorPublicKey {
-			id: target.rsa_identity().unwrap(),
+			id: target
+				.rsa_identity()
+				.ok_or_else(|| Error::InternalError("no rsa_identity".to_string()))?,
 			pk: *target.ntor_onion_key(),
 		};
 		// FlowCtrl=1 means that this hop supports authenticated SENDMEs
