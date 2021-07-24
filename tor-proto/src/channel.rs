@@ -238,7 +238,7 @@ impl Channel {
 			tls_stream,
 			unique_id,
 		);
-
+		println!("built reactor");
 		(channel, reactor)
 	}
 
@@ -552,14 +552,20 @@ pub(crate) mod test {
 			rsa_id: RsaIdentity,
 		}
 		impl ChanTarget for ChanT {
-			fn ed_identity(&self) -> &Ed25519Identity {
-				&self.ed_id
+			fn ed_identity(&self) -> Option<Ed25519Identity> {
+				Some(self.ed_id)
 			}
-			fn rsa_identity(&self) -> &RsaIdentity {
-				&self.rsa_id
+			fn rsa_identity(&self) -> Option<RsaIdentity> {
+				Some(self.rsa_id)
 			}
 			fn addrs(&self) -> &[SocketAddr] {
 				&[]
+			}
+			fn set_ed_identity(&mut self, ed: Ed25519Identity) {
+				self.ed_id = ed;
+			}
+			fn set_rsa_identity(&mut self, rsa: RsaIdentity) {
+				self.rsa_id = rsa;
 			}
 		}
 

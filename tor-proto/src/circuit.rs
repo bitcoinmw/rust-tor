@@ -1143,11 +1143,17 @@ mod test {
 		fn addrs(&self) -> &[std::net::SocketAddr] {
 			&[]
 		}
-		fn ed_identity(&self) -> &pk::ed25519::Ed25519Identity {
-			&self.ed_id
+		fn ed_identity(&self) -> Option<pk::ed25519::Ed25519Identity> {
+			Some(self.ed_id)
 		}
-		fn rsa_identity(&self) -> &pk::rsa::RsaIdentity {
-			&self.rsa_id
+		fn rsa_identity(&self) -> Option<pk::rsa::RsaIdentity> {
+			Some(self.rsa_id)
+		}
+		fn set_ed_identity(&mut self, ed: pk::ed25519::Ed25519Identity) {
+			self.ed_id = ed;
+		}
+		fn set_rsa_identity(&mut self, rsa: pk::rsa::RsaIdentity) {
+			self.rsa_id = rsa;
 		}
 	}
 	impl tor_linkspec::CircTarget for ExampleTarget {

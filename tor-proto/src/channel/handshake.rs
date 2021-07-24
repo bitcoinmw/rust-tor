@@ -607,11 +607,17 @@ pub(super) mod test {
 		fn addrs(&self) -> &[SocketAddr] {
 			&[]
 		}
-		fn ed_identity(&self) -> &Ed25519Identity {
-			&self.ed
+		fn ed_identity(&self) -> Option<Ed25519Identity> {
+			Some(self.ed)
 		}
-		fn rsa_identity(&self) -> &RsaIdentity {
-			&self.rsa
+		fn rsa_identity(&self) -> Option<RsaIdentity> {
+			Some(self.rsa)
+		}
+		fn set_ed_identity(&mut self, ed: Ed25519Identity) {
+			self.ed = ed;
+		}
+		fn set_rsa_identity(&mut self, rsa: RsaIdentity) {
+			self.rsa = rsa;
 		}
 	}
 
@@ -630,8 +636,8 @@ pub(super) mod test {
 		let unver = make_unverified(certs);
 		let ed = Ed25519Identity::from_bytes(peer_ed).unwrap();
 		let rsa = RsaIdentity::from_bytes(peer_rsa).unwrap();
-		let chan = DummyChanTarget { ed, rsa };
-		unver.check_internal(&chan, peer_cert_sha256, when)
+		let mut chan = DummyChanTarget { ed, rsa };
+		unver.check_internal(&mut chan, peer_cert_sha256, when)
 	}
 
 	// no certs at all!

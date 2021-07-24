@@ -125,8 +125,8 @@ mod test {
 	fn targetinfo() {
 		let ti = OwnedChanTarget::new(
 			vec!["127.0.0.1:11".parse().unwrap()],
-			[42; 32].into(),
-			[45; 20].into(),
+			Some([42; 32].into()),
+			Some([45; 20].into()),
 		);
 
 		let ti2 = OwnedChanTarget::from_chan_target(&ti);

@@ -118,22 +118,34 @@ where
 	/// Once this function returns, the channel is dead, and can't be
 	/// used again.
 	pub async fn run(mut self) -> Result<()> {
+		println!("1");
 		if let Some(chan) = self.channel.upgrade() {
+			println!("2");
 			if chan.closed.load(Ordering::SeqCst) {
+				println!("3");
 				return Err(Error::ChannelClosed);
 			}
 		} else {
+			println!("4");
 			return Err(Error::ChannelClosed);
 		}
+		println!("5: {}", self.unique_id);
 		debug!("{}: Running reactor", self.unique_id);
 		let result: Result<()> = loop {
+			println!("loop");
 			match self.run_once().await {
-				Ok(()) => (),
-				Err(ReactorError::Shutdown) => break Ok(()),
+				Ok(()) => {
+					println!("returning ok");
+					()
+				}
+				Err(ReactorError::Shutdown) => {
+					println!("returning break ok");
+					break Ok(());
+				}
 				Err(ReactorError::Err(e)) => break Err(e),
 			}
 		};
-		debug!("{}: Reactor stopped: {:?}", self.unique_id, result);
+		println!("{}: Reactor stopped: {:?}", self.unique_id, result);
 		if let Some(chan) = self.channel.upgrade() {
 			chan.closed.store(true, Ordering::SeqCst);
 		}

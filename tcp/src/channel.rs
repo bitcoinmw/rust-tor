@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use futures::stream::SplitStream;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::sync::Mutex;
 use tor_linkspec::OwnedChanTarget;
-use tor_proto::channel::reactor::Reactor;
 use tor_proto::channel::Channel;
 use tor_proto::channel::ChannelBuilder;
 use tor_rtcompat::tls::TlsConnector;
 use tor_rtcompat::CertifiedConn;
 use tor_rtcompat::Runtime;
-use tor_rtcompat::TlsProvider;
 use tor_util::logger::Log;
 use tor_util::{Error, ErrorKind};
 
@@ -43,36 +40,6 @@ impl TorChannel {
 		}
 	}
 }
-
-/*
-async fn process_rx(
-	rx: &mut mpsc::Receiver<
-		Option<
-			(Arc<Channel>,
-			Reactor<SplitStream<asynchronous_codec::framed::Framed<<impl Runtime as TlsProvider>::TlsStream, tor_proto::channel::codec::ChannelCodec>>>)>>, channel_wrapper: Arc<Mutex<TorChannel>>) {
-	let res = rx.recv().await;
-	if res.is_some() {
-		let res = res.unwrap();
-		if res.is_some() {
-			let (channel, reactor) = res.unwrap();
-			let mut channel_wrapper = channel_wrapper.lock().unwrap();
-			channel_wrapper.channel = Some(channel);
-		} else {
-			let mut channel_wrapper = channel_wrapper.lock().unwrap();
-			channel_wrapper.channel = None;
-		}
-	}
-
-	{
-		let mut channel_wrapper = channel_wrapper.lock().unwrap();
-		if channel_wrapper.channel.is_none() && channel_wrapper.error.is_none() {
-			// it means it was a timeout so mark error
-			channel_wrapper.error =
-				Some(ErrorKind::TcpConnectError("connect timeout".to_string()).into());
-		}
-	}
-}
-*/
 
 fn connect(
 	host: String,
@@ -195,14 +162,15 @@ fn connect(
 		}
 	})?;
 
-	//runtime.block_on(process_rx(&mut rx, channel_wrapper));
-
 	runtime.block_on(async {
 		let res = rx.recv().await;
 		if res.is_some() {
 			let res = res.unwrap();
 			if res.is_some() {
 				let (channel, reactor) = res.unwrap();
+				let _ = runtime.spawn(async {
+					let x = reactor.run().await;
+				});
 				let mut channel_wrapper = channel_wrapper.lock().unwrap();
 				channel_wrapper.channel = Some(channel);
 			} else {
@@ -220,7 +188,6 @@ fn connect(
 				Some(ErrorKind::TcpConnectError("connect timeout".to_string()).into());
 		}
 	}
-
 	Ok(())
 }
 
